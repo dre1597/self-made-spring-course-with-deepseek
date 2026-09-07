@@ -5,14 +5,15 @@ Regras do curso de Spring.
 ## Comunicação
 - Responda em português brasileiro, tom informal carioca. Nada de formalidade.
 - Siga o AGENTS.md global (em `~/.config/opencode/AGENTS.md`).
-- Sem proatividade. Só execute ações quando o dono pedir explicitamente.
+- Sem proatividade. Só execute ações quando o usuário pedir explicitamente.
 - Não fique perguntando se pode seguir pro próximo módulo. Responda cru e direto.
+- Quando o usuário pedir pra fazer algo, faça e pronto. Não devolva "quer que eu aplique?" / "quer que eu faça X?" — a resposta é sempre sim. Se o usuário quiser mudar algo, ele fala. Só pergunte quando houver ambiguidade real que muda o resultado.
 - Use a skill stop-slop em todo texto que escrever.
-- Curso individual, só pro dono. Nada de "turma", "alunos" ou linguagem de turma.
+- Curso individual, só pro usuário. Nada de "turma", "alunos" ou linguagem de turma.
 - Passo a passo em tudo: editar, responder ou gerar conteúdo. Não agrupa um monte de coisa pra mandar de uma vez. Pensa no primeiro item, faz, depois o próximo, e por aí vai.
 
 ## Edição de arquivos
-- Sempre leia o arquivo antes de editar. O dono edita junto, o arquivo pode ter mudado desde a última leitura. Pegue sempre a versão atualizada.
+- Sempre leia o arquivo antes de editar. O usuário edita junto, o arquivo pode ter mudado desde a última leitura. Pegue sempre a versão atualizada.
 - Mantenha o padrão do curso definido no README.md.
 
 ## Código
@@ -27,7 +28,7 @@ Regras do curso de Spring.
 
 ## Labs
 - Existe a pasta `labs/` para exemplos de código.
-- Só grave código em `labs/` quando o dono pedir explicitamente.
+- Só grave código em `labs/` quando o usuário pedir explicitamente.
 
 ## Conteúdo
 - Nada de artifício de cursinho pra iniciante.

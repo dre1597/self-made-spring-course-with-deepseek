@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: greetings
+
+greeting:
+  default-language: pt
+  suffix: "!"
