@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: reports
+  profiles:
+    active: prod
