@@ -20,7 +20,10 @@ Regras do curso de Spring.
 - Stack fixa: Java 25 LTS, Gradle, Spring Boot 4.1 / Spring Framework 7.
 - Siga boas práticas e convenções do Java.
 - Nomenclatura descritiva. Nada de nome de variável genérico.
+- Código descritivo vale mais que código curto. Não abrevia nome nem economiza linha à custa de clareza.
 - Prefira código descritivo a comentários. Explicação de aula pode ter comentário, código solto não.
+- Todo exemplo de código pertence a um projeto (ou lab) que roda. Nada de snippet solto.
+- Cada aula usa um projeto próprio. Não reaproveita o projeto das aulas anteriores; se precisar, cria um novo. A troca de projeto dentro da aula é suave: só muda o pacote no código ou uma menção breve, sem anunciar "novo projeto". O foco é a aula, não os projetos.
 
 ## Labs
 - Existe a pasta `labs/` para exemplos de código.
