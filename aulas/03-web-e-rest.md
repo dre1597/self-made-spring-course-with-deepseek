@@ -394,13 +394,14 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/books")
+@RequestMapping("/api/books/hateoas")
 public class BookHypermediaController {
 
     private final BookService service;
@@ -418,11 +419,14 @@ public class BookHypermediaController {
     }
 
     @GetMapping("/{id}/delete")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
 ```
+
+`linkTo(methodOn(...))` exige que o método referenciado tenha retorno não-`void`, senão `linkTo` não compila (`Cannot resolve method 'linkTo(void)'`). Por isso `delete` devolve `ResponseEntity<Void>` em vez de `void`: `noContent()` mantém o `204 No Content` e dá um tipo de retorno que o link aceita.
 
 `linkTo(methodOn(...))` gera o link a partir da anotação do método, sem hardcode de URL. O cliente recebe `_links.self` e `_links.delete` e usa o que existir. O formato é HAL (`application/hal+json`), padrão de fato de hypermedia.
 

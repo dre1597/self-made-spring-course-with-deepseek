@@ -1,0 +1,28 @@
+GET http://localhost:8080/api/books
+
+<> 2026-09-07T211835.200.json
+<> 2026-09-07T211742.200.json
+
+###
+
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "The Great Gatsby",
+  "author": "F. Scott Fitzgerald"
+}
+
+<> 2026-09-07T211739.201.json
+
+###
+
+GET http://localhost:8080/api/books/1
+
+<> 2026-09-07T211831.200.json
+
+###
+
+DELETE http://localhost:8080/api/books/1
+
+###
