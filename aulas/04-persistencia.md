@@ -417,6 +417,19 @@ public class JpaAuditingConfiguration {
 
 ## Cache
 
+O serviço que cacheia lança uma exceção de domínio quando o livro não existe:
+
+```java
+package com.example.books.book;
+
+public class BookNotFoundException extends RuntimeException {
+
+    public BookNotFoundException(Long id) {
+        super("Livro " + id + " não encontrado");
+    }
+}
+```
+
 `@Cacheable` guarda o retorno de um método e devolve o cacheado sem reexecutar. Leitura quente e custosa entra aqui:
 
 ```java
