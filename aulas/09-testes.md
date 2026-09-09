@@ -2,23 +2,15 @@
 
 Objetivo: testar com `@SpringBootTest`, slices e Testcontainers, no JUnit 6.
 
-## Dependências
+## JUnit 6
+
+Base de testes do projeto:
 
 ```kotlin
-dependencies {
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
-}
+testImplementation("org.springframework.boot:spring-boot-starter-test")
 ```
 
-Cada slice tem seu starter de teste. `spring-boot-starter-test` traz JUnit 6, AssertJ e Mockito.
-
-## JUnit 6
+O `spring-boot-starter-test` traz JUnit 6, AssertJ e Mockito. Cada slice que as seções abaixo usam tem o seu próprio starter de teste.
 
 O Boot 4 roda sobre JUnit 6, que saiu em setembro de 2025. A migração do JUnit 5 é suave: os imports de `org.junit.jupiter.api.*` e os asserts do AssertJ são os mesmos. O que mudou foi a remoção de APIs deprecadas há mais de dois anos.
 
@@ -52,6 +44,12 @@ class BookServiceTest {
 Contexto completo é lento; use pra fluxos que atravessam camadas. Pra camada isolada, use slice.
 
 ## @WebMvcTest
+
+Dependência da seção:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+```
 
 Testa só o controller, sem subir banco nem serviço. Dependências viram mocks com `@MockitoBean`:
 
@@ -97,6 +95,12 @@ No Boot 4 os slices mudaram de pacote: `@WebMvcTest` agora é `org.springframewo
 
 ## @DataJpaTest
 
+Dependência da seção:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+```
+
 Testa só o repository, com banco em memória e rollback automático:
 
 ```java
@@ -126,6 +130,12 @@ class BookRepositoryTest {
 `@DataJpaTest` fica em `org.springframework.boot.data.jpa.test.autoconfigure`. Cada teste roda numa transação que desfaz no final.
 
 ## Segurança
+
+Dependência da seção:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+```
 
 Pra rodar como um usuário específico, `@WithMockUser`:
 
@@ -199,7 +209,15 @@ class BookServiceEventsTest {
 
 ## Testcontainers
 
-Pra testar contra o banco real em container, em vez do H2 em memória:
+Dependências da seção:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-testcontainers")
+testImplementation("org.testcontainers:junit-jupiter")
+testImplementation("org.testcontainers:postgresql")
+```
+
+O `spring-boot-testcontainers` traz o `@ServiceConnection`; o `junit-jupiter` liga o ciclo de vida do container ao JUnit; o `postgresql` fornece a imagem do driver de teste. Pra testar contra o banco real em container, em vez do H2 em memória:
 
 ```java
 package com.example.books.book;

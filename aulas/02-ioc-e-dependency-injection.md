@@ -8,6 +8,14 @@ O `ApplicationContext` é o container. Você declara o que precisa; o Spring cri
 
 Inversão de controle: o `new` não é seu. Você descreve as dependências e o container monta o grafo quando a aplicação sobe. Se um bean falta, o contexto nem inicia e você vê o erro já na subida.
 
+Base do projeto:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+```
+
+O `webmvc` traz o container (o `ApplicationContext`) e o MVC pros controllers REST das seções abaixo.
+
 A classe principal:
 
 ```java
@@ -306,6 +314,14 @@ src/main/java/com/example/greetings/
 ```
 
 ## Scopes
+
+Dependência deste projeto:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+```
+
+Mesma base: o starter traz o container, o `@ComponentScan` e o suporte a `ApplicationRunner`, que os exemplos abaixo usam.
 
 Controla quantas instâncias o container mantém.
 

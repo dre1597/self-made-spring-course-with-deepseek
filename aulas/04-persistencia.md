@@ -2,24 +2,23 @@
 
 Objetivo: persistir com Spring Data JPA, cair pro JDBC quando JPA não compensa, e governar schema com Flyway.
 
-## Dependências
+As dependências entram nas seções onde são usadas, cada uma na sua hora. A API e a validação dos requests sustentam a aula inteira, então entram logo aqui, na primeira parada:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
-    implementation("org.springframework.boot:spring-boot-starter-cache")
-    implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation("org.redisson:redisson-spring-boot-starter")
-    runtimeOnly("com.h2database:h2")
-}
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-validation")
 ```
 
-`data-jpa` traz Hibernate 7 e HikariCP (via JDBC). O `h2` é o banco em memória pra aula rodar sem Postgres. No Boot 4 o Flyway só roda via starter; `flyway-core` solto no classpath não é mais auto-configurado.
-
 ## Entity e Repository
+
+Dependências desta seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+runtimeOnly("com.h2database:h2")
+```
+
+`data-jpa` traz Hibernate 7 e o HikariCP (via JDBC). O `h2` é o banco em memória, `runtimeOnly` porque só o driver precisa existir na hora de rodar, não em tempo de compilação.
 
 Entity mapeada:
 
@@ -229,7 +228,15 @@ O Boot expõe o `JdbcClient` pronto, em cima do `DataSource` e do `JdbcTemplate`
 
 ## Spring Data JDBC
 
-É a alternativa sem Hibernate: mapeia direto pra tabela, sem contexto de persistência, sem lazy loading. Bom pra domínios simples e agregados.
+Esta aula mostra dois mundos de persistência no mesmo projeto: JPA (o `Book`, com Hibernate) e Spring Data JDBC (o `Review`, sem Hibernate). Os dois convivem porque o Boot autoconfigura cada starter separado, e cada um escaneia seus próprios repositórios. Por isso a seção tem dependência própria:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+```
+
+É ela que coloca o pacote `org.springframework.data.relational` no classpath, onde mora o `@Table` do `Review`. Sem ela, o import não compila, mesmo com o `data-jpa` presente.
+
+JDBC é a alternativa sem Hibernate: mapeia direto pra tabela, sem contexto de persistência, sem lazy loading. Bom pra domínios simples e agregados.
 
 ```java
 package com.example.books.review;
@@ -283,7 +290,13 @@ JPA usa `JpaRepository`; JDBC usa `CrudRepository`. A diferença prática: JPA p
 
 ## Auditing
 
-Auditoria grava quem criou/alterou e quando, sem código manual em cada entity. Uma superclasse reúne os campos:
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-security")
+```
+
+Ela fornece o `SecurityContextHolder` e o `Authentication`, de onde o `AuditorAware` tira o usuário corrente. Auditoria grava quem criou/alterou e quando. Os campos entram direto na entidade, cada uma declarando o que tem, com o `AuditingEntityListener` na classe. A `Book` com os quatro campos de auditoria:
 
 ```java
 package com.example.books.book;
@@ -297,15 +310,30 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@MappedSuperclass
+@Entity
+@Table(name = "books")
 @EntityListeners(AuditingEntityListener.class)
-public abstract class AuditableEntity {
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
+    private String author;
 
     @CreatedDate
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
     @LastModifiedDate
@@ -316,10 +344,50 @@ public abstract class AuditableEntity {
 
     @LastModifiedBy
     private String updatedBy;
+
+    protected Book() {
+    }
+
+    public Book(String title, String author) {
+        this.title = title;
+        this.author = author;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
 }
 ```
 
-A entity estende `AuditableEntity` e herda os quatro campos. As datas o Spring preenche sozinho. O usuário vem de um `AuditorAware`:
+`@EntityListeners(AuditingEntityListener.class)` liga o mecanismo pra essa classe. Cada anotação marca o papel do campo: `@CreatedDate` e `@LastModifiedDate` o Spring preenche sozinho; `@CreatedBy` e `@LastModifiedBy` saem do `AuditorAware`, logo abaixo.
+
+Declarar na própria entidade tem uma vantagem sobre superclasse: cada entidade carrega só o que faz sentido. Entidade criada por job (sem usuário logado) não tem `createdBy`/`updatedBy`; entidade imutável não tem `updatedAt`; a que usa soft delete declara o `deletedAt` onde ele existe. Nada chega por herança escondida — o trade-off é repetir as anotações, que é o custo aceito pelo critério de explícito valer mais que curto.
+
+`@CreatedDate` dispensa o `createdAt` manual no construtor. O usuário vem de um `AuditorAware`:
 
 ```java
 package com.example.books.config;
@@ -345,7 +413,7 @@ public class JpaAuditingConfiguration {
 }
 ```
 
-`@EnableJpaAuditing` liga o mecanismo; o `AuditorAware` diz de onde sai o usuário corrente. As datas dispensam o `createdAt` manual do construtor da entity.
+`@EnableJpaAuditing` liga o mecanismo; o `AuditorAware` diz de onde sai o usuário corrente.
 
 ## Cache
 
@@ -394,6 +462,8 @@ implementation("org.springframework.boot:spring-boot-starter-cache")
 implementation("com.github.ben-manes.caffeine:caffeine")
 ```
 
+As duas andam juntas, mas fazem papéis diferentes. `starter-cache` é a abstração: as anotações `@Cacheable`/`@CacheEvict`/`@CachePut`, o `CacheManager` e a config `spring.cache.*`. Caffeine é a implementação de verdade, a máquina que guarda e expira os valores em memória. Programando contra o `starter-cache`, troca-se o provider depois (Redis, por exemplo) sem mexer no código.
+
 ```yaml
 spring:
   cache:
@@ -401,6 +471,8 @@ spring:
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=10m
 ```
+
+O `type: caffeine` diz ao Boot qual implementação usar; a `spec` configura o Caffeine, `maximumSize` de 1000 entradas e `expireAfterWrite` de 10 minutos.
 
 A key default são os argumentos do método. Quando o dado muda, `@CacheEvict` limpa a entrada; quando a operação atualiza o valor, `@CachePut` grava sem pular o método. Caffeine é cache local (por nó); Redis (`spring-boot-starter-data-redis`) vira o mesmo cache compartilhado entre instâncias. O problema do cache nunca é guardar, é invalidar no momento certo.
 
@@ -415,7 +487,13 @@ A escolha segue a mesma régua de JPA vs JDBC. Mongo quando o dado é um documen
 
 ## Fila com Redis (estilo BullMQ)
 
-Redis vira broker de fila quando o volume é leve e você já tem Redis na stack, então não sobe um broker só pra isso. No Node o BullMQ faz esse papel com delayed jobs e retry. No Java o equivalente é o Redisson: `RBlockingQueue` no consumidor e `RDelayedQueue` no agendamento. O `redisson-spring-boot-starter` (na lista de dependências) auto-configura o `RedissonClient` apontando pro Redis em `localhost:6379`.
+Redis vira broker de fila quando o volume é leve e você já tem Redis na stack, então não sobe um broker só pra isso. No Node o BullMQ faz esse papel com delayed jobs e retry. No Java o equivalente é o Redisson: `RBlockingQueue` no consumidor e `RDelayedQueue` no agendamento. A dependência da seção:
+
+```kotlin
+implementation("org.redisson:redisson-spring-boot-starter")
+```
+
+Ela auto-configura o `RedissonClient` apontando pro Redis em `localhost:6379`. Sem ela, não existe fila nem client Redis na aplicação.
 
 Produtor: enfileira um lembrete de devolução pra daqui um tempo.
 
@@ -448,7 +526,7 @@ public class ReturnReminderQueue {
 
 `getDelayedQueue(queue)` cria o delayed queue por cima da fila real. O `offer` com delay só joga o job na fila quando o tempo passa, igual ao delayed jobs do BullMQ.
 
-Consumidor: `take()` bloqueia até vir job, e roda numa virtual thread (aula 06).
+Consumidor: `take()` bloqueia até vir job, e roda numa virtual thread.
 
 ```java
 package com.example.books.notification;
@@ -491,7 +569,7 @@ public class ReturnReminderConsumer {
 }
 ```
 
-O produtor e o consumidor falam com a mesma chave (`return-reminders`); o Redisson resolve a serialização do `Long` sozinho. Pra volume alto ou entrega com garantia de replay, isso aqui não segura: vai de Kafka ou Artemis (aula 07). Redis como fila é o caso leve, e o Redisson ainda entrega `RLock` (lock) e `RAtomicLong` (contador) com o mesmo `RedissonClient`.
+O produtor e o consumidor falam com a mesma chave (`return-reminders`); o Redisson resolve a serialização do `Long` sozinho. Pra volume alto ou entrega com garantia de replay, isso aqui não segura: vai de Kafka ou Artemis. Redis como fila é o caso leve, e o Redisson ainda entrega `RLock` (lock) e `RAtomicLong` (contador) com o mesmo `RedissonClient`.
 
 ## Transações
 
@@ -581,7 +659,13 @@ public class BookAuditService {
 
 ## Flyway e HikariCP
 
-Flyway aplica migrações versionadas na subida, antes do JPA usar o schema. Migração em `src/main/resources/db/migration/V1__create_book_table.sql`:
+A dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-flyway")
+```
+
+Flyway aplica migrações versionadas na subida, antes do JPA usar o schema. No Boot 4 só funciona via starter; `flyway-core` solto no classpath não é mais auto-configurado. Migração em `src/main/resources/db/migration/V1__create_book_table.sql`:
 
 ```sql
 CREATE TABLE books (

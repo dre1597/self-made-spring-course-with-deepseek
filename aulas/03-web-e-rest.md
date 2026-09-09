@@ -2,20 +2,15 @@
 
 Objetivo: montar uma API REST com controllers, validação, tratamento de erro, clientes HTTP e versionamento.
 
-## Dependências
+## Controllers e routing
+
+Base do projeto:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-restclient")
-    implementation("org.springframework.boot:spring-boot-starter-hateoas")
-}
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
 ```
 
-No Boot 4 a validação saiu do starter web: se o código usa `jakarta.validation`, o `spring-boot-starter-validation` precisa estar declarado. O `spring-boot-starter-restclient` traz o `RestClient` e as HTTP interfaces.
-
-## Controllers e routing
+O `webmvc` traz o MVC e o suporte a controllers REST, base da aula inteira.
 
 O domínio é uma API de livros. Um record de livro:
 
@@ -164,6 +159,14 @@ public class BookController {
 
 ## Bean Validation 3.1
 
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-validation")
+```
+
+No Boot 4 a validação saiu do starter web: se o código usa `jakarta.validation`, o starter precisa estar declarado.
+
 O request de criação recebe as constraints:
 
 ```java
@@ -233,7 +236,13 @@ Agora `GET /api/books/999` responde `404` com um `ProblemDetail` em vez de vazar
 
 ## RestClient
 
-O Boot auto-configura um `RestClient.Builder`. Ele já vem com os conversores de mensagem e a fábrica de HTTP certa; você injeta e ajusta.
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-restclient")
+```
+
+O `spring-boot-starter-restclient` traz o `RestClient` e as HTTP interfaces das seções abaixo. O Boot auto-configura um `RestClient.Builder`. Ele já vem com os conversores de mensagem e a fábrica de HTTP certa; você injeta e ajusta.
 
 ```java
 package com.example.books.book;
@@ -385,7 +394,13 @@ Requisição sem o header cai na versão default (`1.0`). Versão fora de `1.0`/
 
 ## HATEOAS (menção)
 
-Hypermedia dá um passo além do JSON plano: a resposta de um recurso carrega os links das operações seguintes, e o cliente navega por eles em vez de montar a URL na mão. O `spring-boot-starter-hateoas` traz o suporte, com `EntityModel` (um recurso) e `CollectionModel` (uma lista).
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-hateoas")
+```
+
+Hypermedia dá um passo além do JSON plano: a resposta de um recurso carrega os links das operações seguintes, e o cliente navega por eles em vez de montar a URL na mão. O starter traz o suporte, com `EntityModel` (um recurso) e `CollectionModel` (uma lista).
 
 ```java
 package com.example.books.book;

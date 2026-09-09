@@ -2,6 +2,15 @@
 
 Objetivo: rodar trabalho em virtual threads, assíncrono com `@Async`, e retry/concurrency limit direto no core do Spring 7.
 
+Base do projeto:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter")
+implementation("org.springframework.boot:spring-boot-starter-restclient")
+```
+
+O `spring-boot-starter` traz o contexto, o scheduling, o async e a resiliência do core (tudo do Spring Framework 7). O `restclient` cobre o `RestClient`, usado nas seções de retry.
+
 ## Virtual threads
 
 Uma linha no `application.yaml`:

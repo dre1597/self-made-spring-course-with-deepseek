@@ -4,11 +4,11 @@ Objetivo: expor um serviço gRPC com Spring gRPC, definir o contrato em protobuf
 
 ## Por que gRPC
 
-REST (aula 03) é JSON por HTTP, contrato solto. gRPC é contrato tipado em protobuf, com serialização binária e streaming nativo. Compensa em comunicação interna de alto volume, onde o overhead do JSON e o contrato implícito doem. Serviço a serviço, com protobuf, o cliente ganha um stub gerado: erro de tipo vira erro de compilação, não de runtime.
+REST é JSON por HTTP, contrato solto. gRPC é contrato tipado em protobuf, com serialização binária e streaming nativo. Compensa em comunicação interna de alto volume, onde o overhead do JSON e o contrato implícito doem. Serviço a serviço, com protobuf, o cliente ganha um stub gerado: erro de tipo vira erro de compilação, não de runtime.
 
 Spring gRPC 1.0.x roda com Boot 4.1. O `.proto` define o contrato e gera as classes Java; `@GrpcService` expõe o serviço; o cliente injeta um stub.
 
-## Dependências
+Base do projeto:
 
 ```kotlin
 plugins {
@@ -35,7 +35,7 @@ protobuf {
 }
 ```
 
-O start.spring.io gera esse setup pronto quando você marca o starter gRPC server. O plugin protobuf compila o `.proto` em classes Java na build.
+O `grpc-server` expõe o serviço (seção Servidor); o `grpc-client` cria os channels e stubs (seção Cliente). O plugin protobuf compila o `.proto` em classes Java na build. O start.spring.io gera esse setup pronto quando você marca o starter gRPC server.
 
 ## O contrato
 
@@ -161,7 +161,7 @@ O address vem inline no exemplo. Pra configurar por propriedade, `spring.grpc.cl
 
 ## gRPC vs REST
 
-gRPC vence onde contrato forte e streaming importam, e onde o custo de manter o `.proto` compensa. REST vence em simplicidade, cache HTTP e integração com ferramentas do navegador. O ponto comum: ambos são chamadas entre processos; a escolha é sobre contrato e performance, não sobre "modernidade". O teste do serviço gRPC roda in-process com `@AutoConfigureTestGrpcTransport`, sem porta, no mesmo espírito dos slices da aula 09.
+gRPC vence onde contrato forte e streaming importam, e onde o custo de manter o `.proto` compensa. REST vence em simplicidade, cache HTTP e integração com ferramentas do navegador. O ponto comum: ambos são chamadas entre processos; a escolha é sobre contrato e performance, não sobre "modernidade". O teste do serviço gRPC roda in-process com `@AutoConfigureTestGrpcTransport`, sem porta, no mesmo espírito dos slices de teste.
 
 ## Estrutura
 

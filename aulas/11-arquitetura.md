@@ -30,6 +30,10 @@ dependencyManagement {
 
 Centraliza a config de todos os serviços num lugar, versionada em git. O server:
 
+```kotlin
+implementation("org.springframework.cloud:spring-cloud-config-server")
+```
+
 ```java
 package com.example.configserver;
 
@@ -75,6 +79,10 @@ Cada serviço lê `books.yaml` do repositório de config, e a mudança de propri
 ### Discovery
 
 O Eureka registra as instâncias e resolve pelo nome do serviço, sem IP fixo. O server:
+
+```kotlin
+implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-server")
+```
 
 ```java
 package com.example.eurekaserver;
@@ -147,11 +155,17 @@ spring:
             - Path=/api/loans/**
 ```
 
-`lb://books` resolve o serviço pelo discovery e balanceia entre as instâncias. O cliente externo só conhece o gateway; os serviços internos ficam escondidos. Filtros entram por rota: rewrite de path, header extra, rate limit por usuário. A dependência é `spring-cloud-starter-gateway`. O gateway em si é WebFlux mesmo que os serviços atrás sejam MVC; ele só encaminha.
+`lb://books` resolve o serviço pelo discovery e balanceia entre as instâncias. O cliente externo só conhece o gateway; os serviços internos ficam escondidos. Filtros entram por rota: rewrite de path, header extra, rate limit por usuário. A dependência:
+
+```kotlin
+implementation("org.springframework.cloud:spring-cloud-starter-gateway")
+```
+
+O gateway roda em cima do WebFlux (o starter traz o `webflux`), mesmo que os serviços atrás sejam MVC; ele só encaminha.
 
 ### Circuit Breaker
 
-Retry (aula 06) resolve falha transitória; circuit breaker resolve dependência que fica fora por um período. Quando a taxa de falha passa do limite, o circuito abre e falha rápido sem chamar o serviço, poupando ele de carga. Depois de um tempo deixa passar uma requisição de teste e reabre se funcionar.
+Retry resolve falha transitória; circuit breaker resolve dependência que fica fora por um período. Quando a taxa de falha passa do limite, o circuito abre e falha rápido sem chamar o serviço, poupando ele de carga. Depois de um tempo deixa passar uma requisição de teste e reabre se funcionar.
 
 O Resilience4j é a implementação padrão do Spring Cloud:
 

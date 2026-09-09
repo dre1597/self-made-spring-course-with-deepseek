@@ -4,6 +4,15 @@ Objetivo: configurar por ambiente, lidar com secrets e empacotar em jar, contain
 
 ## Profiles e config externa
 
+Base do projeto:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-actuator")
+```
+
+O `webmvc` roda a API; o `actuator` expõe os endpoints de health que o Kubernetes usa mais abaixo.
+
 Cada ambiente tem seu arquivo. O `application.yaml` carrega o padrão; os `application-{profile}.yaml` sobrescrevem por perfil.
 
 ```yaml

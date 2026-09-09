@@ -12,19 +12,17 @@ Batch processa volume em lote, fora de requisição HTTP. O Spring Batch estrutu
 - **ItemReader / ItemProcessor / ItemWriter**: as três fases do chunk.
 - **JobRepository**: persiste o estado da execução (o que rodou, onde parou).
 
-A gravação do estado permite retomar: se o job cai no meio, reinicia do item onde parou, não do zero. Isso separa batch de um loop simples no `@Scheduled` (aula 06).
+A gravação do estado permite retomar: se o job cai no meio, reinicia do item onde parou, não do zero. Isso separa batch de um loop simples no `@Scheduled`.
 
-## Dependências
+Base do projeto:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-batch")
-    implementation("org.springframework.boot:spring-boot-starter-jdbc")
-    runtimeOnly("com.h2database:h2")
-}
+implementation("org.springframework.boot:spring-boot-starter-batch")
+implementation("org.springframework.boot:spring-boot-starter-jdbc")
+runtimeOnly("com.h2database:h2")
 ```
 
-O Batch precisa de um `DataSource` pro `JobRepository` (tabelas de metadata da execução). O H2 em memória cobre a aula. Em produção, o metadata vai pro Postgres junto do dado.
+O `batch` traz os componentes de job, step e chunk. Ele precisa de um `DataSource` pro `JobRepository` (tabelas de metadata da execução): o `jdbc` fornece o acesso, o H2 em memória cobre a aula. Em produção, o metadata vai pro Postgres junto do dado.
 
 ## Reader, processor, writer
 
@@ -101,7 +99,7 @@ public class BookProcessor implements ItemProcessor<BookRow, BookRow> {
 }
 ```
 
-O writer grava no banco. `JdbcClient` (aula 04) resolve sem puxar JPA:
+O writer grava no banco. `JdbcClient` resolve sem puxar JPA:
 
 ```java
 package com.example.importbatch.book;

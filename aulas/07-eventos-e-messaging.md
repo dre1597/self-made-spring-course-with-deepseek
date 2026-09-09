@@ -2,22 +2,18 @@
 
 Objetivo: publicar eventos de domínio, mandar pra Kafka, RabbitMQ e JMS, e fechar a integração entre módulos com Spring Modulith.
 
-## Dependências
+## Eventos de domínio
+
+Base do projeto:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-kafka")
-    implementation("org.springframework.boot:spring-boot-starter-amqp")
-    implementation("org.springframework.boot:spring-boot-starter-artemis")
-    implementation("org.springframework.modulith:spring-modulith-starter-core")
-    implementation("org.springframework.modulith:spring-modulith-starter-jpa")
-    runtimeOnly("com.h2database:h2")
-}
+implementation("org.springframework.boot:spring-boot-starter")
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+runtimeOnly("com.h2database:h2")
 ```
 
-## Eventos de domínio
+O `spring-boot-starter` traz o contexto e o suporte a eventos (`ApplicationEventPublisher`, `@EventListener`). O `webmvc` sustenta a API de livros. O `data-jpa` com o `h2` bancam o `BookRepository` e as transações usadas abaixo.
 
 O `ApplicationEventPublisher` publica eventos no mesmo processo. O evento:
 
@@ -86,6 +82,12 @@ public void on(BookCreated event) {
 
 ## Kafka
 
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-kafka")
+```
+
 Pra eventos entre processos. O Boot auto-configura o `KafkaTemplate` e o listener container.
 
 Publicação:
@@ -139,7 +141,13 @@ spring:
 
 ## JmsClient
 
-O Spring 7 trocou o `JmsTemplate` pelo `JmsClient`, uma API fluente no mesmo espírito do `RestClient`. O Boot auto-configura o `JmsClient` com o `spring-boot-starter-artemis`.
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-artemis")
+```
+
+O Spring 7 trocou o `JmsTemplate` pelo `JmsClient`, uma API fluente no mesmo espírito do `RestClient`. O Boot auto-configura o `JmsClient` com esse starter.
 
 Envio:
 
@@ -203,7 +211,13 @@ Kafka é log distribuído, bom pra streams e replay; JMS é fila clássica, bom 
 
 ## RabbitMQ
 
-AMQP é o protocolo do RabbitMQ. O modelo é diferente de Kafka e JMS: a mensagem vai pra uma **exchange**, que roteia pra filas por **routing key** e **binding**. O `spring-boot-starter-amqp` traz o `RabbitTemplate` e os listeners.
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-amqp")
+```
+
+AMQP é o protocolo do RabbitMQ. O modelo é diferente de Kafka e JMS: a mensagem vai pra uma **exchange**, que roteia pra filas por **routing key** e **binding**. O starter traz o `RabbitTemplate` e os listeners.
 
 Publicação:
 
@@ -319,7 +333,14 @@ O resumo dos três: Kafka é log distribuído pra streams e replay; RabbitMQ é 
 
 ## Spring Modulith
 
-O Modulith estrutura o monólito em módulos e dá garantias de entrega entre eles. O `@ApplicationModuleListener` é atalho pra `@Transactional` + `@TransactionalEventListener` + `@Async`:
+Dependências da seção:
+
+```kotlin
+implementation("org.springframework.modulith:spring-modulith-starter-core")
+implementation("org.springframework.modulith:spring-modulith-starter-jpa")
+```
+
+O `core` traz o `@Modulithic` e o `@ApplicationModuleListener`; o `jpa` habilita o Event Publication Registry em tabela. O Modulith estrutura o monólito em módulos e dá garantias de entrega entre eles. O `@ApplicationModuleListener` é atalho pra `@Transactional` + `@TransactionalEventListener` + `@Async`:
 
 ```java
 package com.example.books.book;

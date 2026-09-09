@@ -2,19 +2,15 @@
 
 Objetivo: proteger a API com Spring Security 7, autenticação JWT stateless e MFA nativo.
 
-## Dependências
+## CSRF e o que mudou no Security 7
+
+Base do projeto:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
-}
+implementation("org.springframework.boot:spring-boot-starter-security")
 ```
 
-O `spring-boot-starter-security` liga a proteção em toda a aplicação assim que entra no classpath. O `oauth2-resource-server` traz o suporte a JWT (validar token).
-
-## CSRF e o que mudou no Security 7
+O `spring-boot-starter-security` liga a proteção em toda a aplicação assim que entra no classpath.
 
 CSRF vem ligado por default, e o Security 7 mudou o DSL:
 
@@ -26,7 +22,13 @@ CSRF protege formulários de navegador contra envio forjado. Numa API stateless 
 
 ## Autenticação JWT stateless
 
-Configuração principal:
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+```
+
+O `oauth2-resource-server` traz o suporte a JWT, pra validar token no resource server. Configuração principal:
 
 ```java
 package com.example.books.config;

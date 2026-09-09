@@ -2,20 +2,16 @@
 
 Objetivo: expor health checks, exportar métricas e traces via OTLP e correlacionar logs.
 
-## Dependências
+## Actuator e health checks
+
+Base do projeto:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
-    implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0")
-}
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-actuator")
 ```
 
-O `actuator` traz health checks, métricas e o `ObservationRegistry`. O `spring-boot-starter-opentelemetry` é o starter novo do Boot 4: unifica Micrometer e OpenTelemetry num pacote só, exportando tudo via OTLP. O logback appender joga os logs também via OTLP.
-
-## Actuator e health checks
+O `webmvc` sustenta a API. O `actuator` traz health checks, métricas e o `ObservationRegistry`.
 
 O Actuator expõe endpoints de gestão:
 
@@ -42,7 +38,13 @@ Liveness e readiness só existem com `probes.enabled: true`. A diferença import
 
 ## Micrometer + OpenTelemetry
 
-No Boot 3 você escolhia um registry por backend (Prometheus, Datadog...). No Boot 4 o `spring-boot-starter-opentelemetry` troca isso por um formato único: OTLP. A API do Micrometer continua a mesma; o que muda é o caminho de exportação.
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
+```
+
+No Boot 3 você escolhia um registry por backend (Prometheus, Datadog...). No Boot 4 o `spring-boot-starter-opentelemetry` troca isso por um formato único: OTLP. A API do Micrometer continua a mesma; o que muda é o caminho de exportação. É o starter que unifica Micrometer e OpenTelemetry num pacote só.
 
 ```yaml
 management:
@@ -113,6 +115,12 @@ public Book create(CreateBookRequest request) {
 A chamada vira um timer `books.create` e um span de trace com o mesmo nome. O `@Observed` precisa do `ObservationRegistry` (que o actuator já provê) e de AOP habilitado, que o Boot liga automaticamente com Micrometer Tracing no classpath.
 
 ## Logs correlacionados
+
+Dependência da seção:
+
+```kotlin
+implementation("io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0")
+```
 
 O logback appender manda os logs via OTLP e injeta `trace_id` e `span_id` em cada linha:
 

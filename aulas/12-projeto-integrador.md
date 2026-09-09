@@ -4,31 +4,22 @@ Objetivo: montar uma API completa juntando REST, JPA, Security, eventos, observa
 
 ## O projeto
 
-Uma biblioteca: livros, membros e empréstimos. Um membro pega um livro emprestado e devolve. Cada peça das aulas anteriores entra no lugar dela.
-
-## Dependências
+Uma biblioteca: livros, membros e empréstimos. Um membro pega um livro emprestado e devolve. O projeto junta REST, JPA, Security, eventos, observabilidade e testes num fluxo só. As dependências entram nas seções onde são usadas, cada uma na sua hora. A base:
 
 ```kotlin
-dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webmvc")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
-
-    runtimeOnly("com.h2database:h2")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
-}
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-validation")
 ```
 
+O `webmvc` sustenta a API REST; o `validation` cuida das constraints nos requests.
+
 ## Schema
+
+Dependência da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-flyway")
+```
 
 Flyway dono do schema, em `src/main/resources/db/migration/V1__create_library_tables.sql`:
 
@@ -56,6 +47,15 @@ CREATE TABLE loans (
 ```
 
 ## Entities e repositories
+
+Dependências da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+runtimeOnly("com.h2database:h2")
+```
+
+O `data-jpa` traz o Hibernate e os `JpaRepository`; o `h2` é o banco em memória (`runtimeOnly`, só o driver precisa existir na hora de rodar).
 
 ```java
 package com.example.library.book;
@@ -195,6 +195,15 @@ public class Loan {
 ```
 
 ## Eventos
+
+Dependências da seção:
+
+```kotlin
+implementation("org.springframework.modulith:spring-modulith-starter-core")
+implementation("org.springframework.modulith:spring-modulith-starter-jpa")
+```
+
+O `@ApplicationModuleListener` do listener (na seção do serviço) entrega o evento depois do commit, com o Event Publication Registry em tabela. Os records:
 
 ```java
 package com.example.library.loan;
@@ -337,7 +346,14 @@ public class LoanController {
 
 ## Segurança
 
-JWT stateless, com catálogo aberto e operações restritas por role:
+Dependências da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-security")
+implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+```
+
+O `security` liga a proteção; o `oauth2-resource-server` valida o JWT. JWT stateless, com catálogo aberto e operações restritas por role:
 
 ```java
 package com.example.library.config;
@@ -385,6 +401,15 @@ public class SecurityConfiguration {
 
 ## Observabilidade
 
+Dependências da seção:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-actuator")
+implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
+```
+
+O `actuator` traz o `MeterRegistry` (usado no `LoanService`) e os endpoints de health; o `opentelemetry` exporta métricas e traces via OTLP.
+
 ```yaml
 management:
   endpoints:
@@ -411,7 +436,16 @@ management:
 
 ## Testes
 
-Um slice por camada.
+Dependências da seção:
+
+```kotlin
+testImplementation("org.springframework.boot:spring-boot-starter-test")
+testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+```
+
+O `starter-test` traz JUnit e AssertJ; os demais cobrem os slices `@WebMvcTest`, `@DataJpaTest` e o contexto de segurança. Um slice por camada.
 
 ```java
 package com.example.library.loan;
