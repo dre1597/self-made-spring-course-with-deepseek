@@ -465,7 +465,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-public class CorsConfiguration {
+public class CustomCorsConfiguration {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
@@ -866,7 +866,7 @@ tasks-api/src/main/java/com/example/tasks/
 │   ├── AppUsersProperties.java
 │   ├── TokenEncodingConfiguration.java
 │   ├── MethodSecurityConfiguration.java
-│   ├── CorsConfiguration.java
+│   ├── CustomCorsConfiguration.java
 │   └── OidcDecoderConfiguration.java
 └── task/
     └── TaskController.java
