@@ -1,0 +1,13 @@
+### Token do Keycloak
+POST http://localhost:8082/realms/tasks/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=tasks-api&client_secret=sUjwLWy0BWbCFfCYLWE0XHBpBgPMtn959nSPoBmkdZzbWD6CdTUhmE0dV4WLaJBd1smpVMk4CdMNW3EiLVkXbG&username=admin&password=admin
+
+> {%
+  client.global.set("keycloakToken", response.body.access_token);
+%}
+
+### GET /api/quotes com token do Keycloak
+GET http://localhost:8083/api/quotes
+Authorization: Bearer {{keycloakToken}}

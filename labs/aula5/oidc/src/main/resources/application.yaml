@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: oidc
+server:
+  port: 8083
+
+app:
+  security:
+    issuer-uri: http://localhost:8082/realms/tasks

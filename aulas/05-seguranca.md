@@ -132,7 +132,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -161,7 +160,6 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    @Profile("!oidc")
     JwtDecoder jwtDecoder(@Value("${app.security.jwt-secret}") String secret) {
         var key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key).build();
@@ -706,21 +704,61 @@ Escolha o store pelo cenário: JDBC quando o volume de sessão é baixo e já ex
 
 ## OAuth2 / OpenID Connect (OIDC)
 
-OAuth2 resolve a autorização: quem tem token acessa o quê. O OpenID Connect (OIDC) é o protocolo de identidade em cima do OAuth2 — o token passa a carregar também quem é o usuário. Pra autenticar contra um provedor (Google, Keycloak, Auth0), troque o decoder HMAC por um que busca as chaves do issuer. O profile `oidc` liga esse decoder e desliga o HMAC (que ganhou `@Profile("!oidc")`):
+OAuth2 resolve a autorização: quem tem token acessa o quê. O OpenID Connect (OIDC) é o protocolo de identidade em cima do OAuth2 — o token passa a carregar também quem é o usuário. Pra autenticar contra um provedor (Google, Keycloak, Auth0), o resource server não decodifica com segredo local: ele busca as chaves públicas do provedor pela URL do issuer e valida o token por lá. Isso vira um terceiro projeto da aula, `oidc-demo` — só um resource server, sem login próprio.
+
+Dependências:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-security")
+implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+```
+
+Classe main e a configuração — a chave é o `JwtDecoders.fromIssuerLocation(...)`, que descobre o `jwks-uri` do provedor:
 
 ```java
-package com.example.tasks.config;
+package com.example.oidc;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class OidcDemoApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(OidcDemoApplication.class, args);
+    }
+}
+```
+
+```java
+package com.example.oidc.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@Profile("oidc")
-public class OidcDecoderConfiguration {
+public class SecurityConfiguration {
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        return http.build();
+    }
 
     @Bean
     JwtDecoder jwtDecoder(@Value("${app.security.issuer-uri}") String issuerUri) {
@@ -729,19 +767,44 @@ public class OidcDecoderConfiguration {
 }
 ```
 
-`application-oidc.yaml`:
+Uma rota protegida, de exemplo:
+
+```java
+package com.example.oidc.quote;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/quotes")
+public class QuoteController {
+
+    private final List<String> quotes = List.of(
+            "A persistência é o caminho do êxito.",
+            "O sucesso é a soma de pequenos esforços repetidos dia após dia.");
+
+    @GetMapping
+    public List<String> findAll() {
+        return quotes;
+    }
+}
+```
+
+`application.yaml` (porta 8083, pra não conflitar com `tasks-api` 8080 e `mfa-demo` 8081):
 
 ```yaml
-spring:
-  profiles:
-    default: oidc
+server:
+  port: 8083
 
 app:
   security:
     issuer-uri: http://localhost:8082/realms/tasks
 ```
 
-O resource server descobre o `jwks-uri` pelo issuer, valida assinatura, emissor e expiração. O resto do filtro e das autorizações continua igual: quem muda é só de onde vêm as chaves.
+O resource server descobre o `jwks-uri` pelo issuer, valida assinatura, emissor e expiração — quem muda é só de onde vêm as chaves, nada de segredo local.
 
 Pra testar local, um Keycloak em `docker-compose.yml`:
 
@@ -757,11 +820,22 @@ services:
       - "8082:8080"
 ```
 
-Teste:
+Teste — o Keycloak precisa estar de pé com o realm configurado **antes** de subir o `oidc-demo`: o decoder do issuer baixa o discovery document na inicialização, sem Keycloak o app nem sobe.
 
 1. `docker compose up -d` e abra `http://localhost:8082` (admin/admin).
-2. Crie o realm `tasks`, um client `tasks-api` e um user com senha.
-3. Peça o token no `requests.http` (o chaining salva o `access_token` em `keycloakToken`):
+
+2. Crie o realm `tasks` (no seletor de realm no canto superior, perto do nome do usuário logado).
+
+3. Crie o client `tasks-api`:
+   - **Client authentication: ON** — sem isso o client é público, não gera secret (e a aba Credentials nem aparece).
+   - Habilite **Direct access grants** (é o grant usado no teste de senha).
+   - Salvo, vá na aba **Credentials** e copie o **Client secret** (uma string UUID) — é o valor que entra no `requests.http` como `client_secret`.
+
+4. Crie um user com perfil completo — o Keycloak novo exige `firstName`, `lastName` e `email`; sem eles o login é barrado com `invalid_grant: Account is not fully set up`:
+   - Em **Users** → novo user: preenche nome, sobrenome, email (marca **Email verified**) e username.
+   - Na aba **Credentials** do user: seta a senha com **Temporary: OFF**.
+
+5. Peça o token no `requests.http` (o chaining salva o `access_token` em `keycloakToken`):
 
 ```http
 ### Token do Keycloak
@@ -775,17 +849,17 @@ grant_type=password&client_id=tasks-api&client_secret=<client secret>&username=<
 %}
 ```
 
-4. Use o token na API (rodando com o profile `oidc`):
+6. Chame a rota protegida:
 
 ```http
-### GET /api/tasks com token do Keycloak
-GET http://localhost:8080/api/tasks
+### GET /api/quotes com token do Keycloak
+GET http://localhost:8083/api/quotes
 Authorization: Bearer {{keycloakToken}}
 ```
 
-O login local (`/api/auth/login`) continua existindo e emite token HMAC, mas com o profile `oidc` o resource server só aceita o que o Keycloak assinou — token do login local dá 401. Pra voltar ao HMAC, rode sem o profile `oidc` (ou remova o `spring.profiles.default` do yaml).
+Sem token (ou token inválido), o `/api/quotes` responde 401. Com o token do Keycloak, 200. Quem autentica é o provedor; a API só confia nas chaves públicas dele.
 
-O teste acima valida o GET autenticado. O `@PreAuthorize("hasRole('ADMIN')")` do DELETE depende do converter da claim `roles`; o Keycloak manda as roles em `realm_access`/`resource_access`, então com token dele o converter precisaria mapear essas claims — fica como exercício quando a integração exigir as roles do provedor.
+As roles do provedor viajam em `realm_access`/`resource_access`, não na claim `roles` do exemplo do `tasks-api` — mapear isso pro `@PreAuthorize` é específico de cada provedor, fica como exercício quando a integração exigir.
 
 ## Build de cada projeto
 
@@ -850,9 +924,39 @@ dependencies {
 }
 ```
 
+`build.gradle.kts` do `oidc-demo`:
+
+```kotlin
+plugins {
+    java
+    id("org.springframework.boot") version "4.1.1"
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "com.example"
+version = "0.0.1-SNAPSHOT"
+description = "oidc-demo"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+}
+```
+
 ## Estrutura
 
-Dois projetos. `tasks-api` na porta 8080 (API JWT, teste via `requests.http`), `mfa-demo` na porta 8081 (app de navegador, teste no browser):
+Três projetos. `tasks-api` na porta 8080 (API JWT, teste via `requests.http`), `mfa-demo` na porta 8081 (app de navegador, teste no browser), `oidc-demo` na porta 8083 (resource server, teste com Keycloak na 8082):
 
 ```
 tasks-api/src/main/java/com/example/tasks/
@@ -866,15 +970,12 @@ tasks-api/src/main/java/com/example/tasks/
 │   ├── AppUsersProperties.java
 │   ├── TokenEncodingConfiguration.java
 │   ├── MethodSecurityConfiguration.java
-│   ├── CustomCorsConfiguration.java
-│   └── OidcDecoderConfiguration.java
+│   └── CustomCorsConfiguration.java
 └── task/
     └── TaskController.java
 tasks-api/src/main/resources/
 ├── application.yaml
-├── application-oidc.yaml
-├── requests.http
-└── docker-compose.yml
+└── requests.http
 
 mfa-demo/src/main/java/com/example/mfa/
 ├── MfaApplication.java
@@ -885,4 +986,15 @@ mfa-demo/src/main/java/com/example/mfa/
     └── HomeController.java
 mfa-demo/src/main/resources/
 └── application.yaml
+
+oidc-demo/src/main/java/com/example/oidc/
+├── OidcDemoApplication.java
+├── config/
+│   └── SecurityConfiguration.java
+└── quote/
+    └── QuoteController.java
+oidc-demo/src/main/resources/
+├── application.yaml
+├── requests.http
+└── docker-compose.yml
 ```
