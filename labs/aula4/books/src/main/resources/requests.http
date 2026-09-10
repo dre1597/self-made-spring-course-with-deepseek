@@ -1,0 +1,70 @@
+@host = http://localhost:8080
+@user = user
+@password = user123
+
+### Derived query: livros por autor
+GET {{host}}/books/by-author/Clarice%20Lispector
+Authorization: Basic {{user}} {{password}}
+
+### Derived query: livros por fragmento no título
+GET {{host}}/books/by-title/hora
+Authorization: Basic {{user}} {{password}}
+
+### Derived query: último livro criado
+GET {{host}}/books/latest
+Authorization: Basic {{user}} {{password}}
+
+### Paginação
+GET {{host}}/books?page=0&size=2
+Authorization: Basic {{user}} {{password}}
+
+### Specification: autor e fragmento combinados
+GET {{host}}/books/search?author=Clarice%20Lispector&fragment=hora
+Authorization: Basic {{user}} {{password}}
+
+### Specification: só fragmento
+GET {{host}}/books/search?fragment=viva
+Authorization: Basic {{user}} {{password}}
+
+### Projection: só title e author
+GET {{host}}/books/summary?author=Clarice%20Lispector
+Authorization: Basic {{user}} {{password}}
+
+### JdbcClient: relatório de livros por autor
+GET {{host}}/books/report/per-author
+Authorization: Basic {{user}} {{password}}
+
+### Cache: executa duas vezes; a segunda vem do cache
+GET {{host}}/books/1
+Authorization: Basic {{user}} {{password}}
+
+### Auditing: criação autenticada preenche createdBy e createdAt
+POST {{host}}/books
+Authorization: Basic {{user}} {{password}}
+Content-Type: application/json
+
+{
+  "title": "Memórias Póstumas de Brás Cubas",
+  "author": "Machado de Assis"
+}
+
+### Spring Data JDBC: cria review
+POST {{host}}/books/1/reviews
+Authorization: Basic {{user}} {{password}}
+Content-Type: application/json
+
+{
+  "comment": "Ótimo"
+}
+
+### Spring Data JDBC: lista reviews
+GET {{host}}/books/1/reviews
+Authorization: Basic {{user}} {{password}}
+
+### Transações: exclusão grava auditoria em transação própria
+DELETE {{host}}/books/3
+Authorization: Basic {{user}} {{password}}
+
+### Fila com Redis: agenda lembrete de devolução
+POST {{host}}/return-reminders/42?delaySeconds=5
+Authorization: Basic {{user}} {{password}}

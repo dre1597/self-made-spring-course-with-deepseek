@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: books
+  security:
+    user:
+      name: user
+      password: user123
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+  jpa:
+    hibernate:
+          ddl-auto: validate
+  datasource:
+    hikari:
+          maximum-pool-size: 10
+          minimum-idle: 2
+          connection-timeout: 30000
