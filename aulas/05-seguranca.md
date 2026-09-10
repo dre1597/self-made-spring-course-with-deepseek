@@ -499,7 +499,14 @@ Resposta esperada traz `Access-Control-Allow-Origin: http://localhost:8081`. Se 
 
 Cada fator de autenticação vira uma `FactorGrantedAuthority`. Autenticou com senha, ganha `PASSWORD_AUTHORITY`; completou one-time token, ganha `OTT_AUTHORITY`. A autorização então exige quantos fatores quiser. O `@EnableMultiFactorAuthentication` aplica a exigência a todas as regras.
 
-MFA é app com navegador (form login + OTT), não API stateless — então vira um segundo projeto da aula, `mfa-demo`, com `webmvc` + `security` e nada de JWT:
+MFA é app com navegador (form login + OTT), não API stateless — então vira um segundo projeto da aula, `mfa-demo`. As dependências dele:
+
+```kotlin
+implementation("org.springframework.boot:spring-boot-starter-webmvc")
+implementation("org.springframework.boot:spring-boot-starter-security")
+```
+
+Configuração, `webmvc` + `security` e nada de JWT:
 
 ```java
 package com.example.mfa.config;
@@ -529,7 +536,7 @@ public class MfaConfiguration {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/", "/ott/sent").permitAll()
+                        .requestMatchers("/").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
@@ -571,7 +578,7 @@ public class MfaApplication {
 }
 ```
 
-O `oneTimeTokenLogin(...)` expõe o endpoint `POST /ott/generate` (pra pedir o token) e uma página default de submit. O token não tem como ser entregue sozinho — a entrega é sua (email, SMS, etc.). Pra teste, um handler que imprime o token no console e redireciona pra uma página de confirmação:
+O `oneTimeTokenLogin(...)` expõe o endpoint `POST /ott/generate` (pra pedir o token) e a página default de submit em `GET /login/ott`. O token não tem como ser entregue sozinho — a entrega é sua (email, SMS, etc.). Pra teste, um handler que imprime o token no console e redireciona pra página de submit com o token no query param — a página default detecta o `token` na URL e já preenche o form:
 
 ```java
 package com.example.mfa.config;
@@ -584,20 +591,16 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.ott.OneTimeToken;
 import org.springframework.security.web.authentication.ott.OneTimeTokenGenerationSuccessHandler;
-import org.springframework.security.web.authentication.ott.RedirectOneTimeTokenGenerationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ConsoleOneTimeTokenGenerationSuccessHandler implements OneTimeTokenGenerationSuccessHandler {
 
-    private final OneTimeTokenGenerationSuccessHandler redirectHandler =
-            new RedirectOneTimeTokenGenerationSuccessHandler("/ott/sent");
-
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, OneTimeToken oneTimeToken)
             throws IOException, ServletException {
         System.out.println("[OTT] token de " + oneTimeToken.getUsername() + ": " + oneTimeToken.getTokenValue());
-        redirectHandler.handle(request, response, oneTimeToken);
+        response.sendRedirect("/login/ott?token=" + oneTimeToken.getTokenValue());
     }
 }
 ```
@@ -625,22 +628,19 @@ public class HomeController {
     public String admin() {
         return "Painel do admin";
     }
-
-    @GetMapping("/ott/sent")
-    @ResponseBody
-    public String ottSent() {
-        return "Token gerado — copie do console e cole na página de login por token";
-    }
 }
 ```
+
+O `POST /ott/generate` que pede o token é um filtro do Spring Security registrado pelo `oneTimeTokenLogin(...)` — não é um controller seu, por isso não aparece no `/actuator/mappings`. Quem chama ele é o form "Send Token" da página de login; um `POST` direto de fora do navegador esbarra no CSRF (que fica ligado no app de navegador), então o teste é no navegador mesmo.
 
 Teste no navegador (`mfa-demo` na porta 8081):
 
 1. `server.port: 8081` no `application.yaml` do `mfa-demo` (o `tasks-api` fica na 8080).
 2. Abra `http://localhost:8081/` (aberto) e `http://localhost:8081/admin`.
-3. O `/admin` cai no login (`/login`). Entre com `admin`/`password`.
-4. Falta o fator OTT: o Security redireciona pro passo do token. O token sai no console (`[OTT] token de admin: ...`).
-5. Cole o token na página de login por token. Com os dois fatores, o `/admin` libera.
+3. O `/admin` cai na página de login (`/login`), que tem dois forms: o de senha e o "Request a One-Time Token" (botão *Send Token*).
+4. Entre com `admin`/`password` no form de senha. Ganha o fator senha, falta o OTT → o Security redireciona pro passo do token.
+5. No form "Send Token", digite `admin` e clique. O `POST /ott/generate` roda, o token sai no console (`[OTT] token de admin: ...`) e você é redirecionado pra `http://localhost:8081/login/ott?token=...` — a página de submit já vem com o token preenchido.
+6. Confirme o envio. Com os dois fatores, o `/admin` libera.
 
 Se logar como `user` (role `USER`), mesmo com os dois fatores o `/admin` responde 403 — o MFA valida o *como* você autenticou, a role ainda decide o *o que* você pode acessar.
 
