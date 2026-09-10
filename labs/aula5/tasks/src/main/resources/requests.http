@@ -1,0 +1,38 @@
+### Login do user
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "user", "password": "password" }
+
+> {%
+  client.global.set("userToken", response.body.token);
+%}
+
+### Login do admin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "password" }
+
+> {%
+  client.global.set("adminToken", response.body.token);
+%}
+
+### GET /api/tasks com token do user
+GET http://localhost:8080/api/tasks
+Authorization: Bearer {{userToken}}
+
+### GET /api/tasks com token do admin
+GET http://localhost:8080/api/tasks
+Authorization: Bearer {{adminToken}}
+
+### DELETE com token do admin (200)
+DELETE http://localhost:8080/api/tasks/1
+Authorization: Bearer {{adminToken}}
+
+### DELETE com token do user (403)
+DELETE http://localhost:8080/api/tasks/1
+Authorization: Bearer {{userToken}}
+
+### GET sem token (401)
+GET http://localhost:8080/api/tasks
