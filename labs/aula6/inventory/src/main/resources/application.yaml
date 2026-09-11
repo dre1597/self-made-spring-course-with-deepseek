@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: inventory
+  threads:
+    virtual:
+      enabled: true

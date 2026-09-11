@@ -1,0 +1,17 @@
+### Importação de catálogo em background (@Async)
+POST http://localhost:8080/api/inventory/import?source=fornecedor-1
+
+### Preço de produto com retry (@Retryable)
+GET http://localhost:8080/api/prices/1
+
+### Pedido de reposição com retry programático (RetryTemplate)
+POST http://localhost:8080/api/supplier-orders
+Content-Type: application/json
+
+{
+  "productId": 2,
+  "quantity": 10
+}
+
+### Snapshot com limite de concorrência (@ConcurrencyLimit)
+POST http://localhost:8080/api/catalog/snapshot/3
