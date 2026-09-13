@@ -1,0 +1,8 @@
+### Cria pedido (evento in-process)
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+
+{
+  "item": "Teclado mecânico",
+  "amount": 299.90
+}

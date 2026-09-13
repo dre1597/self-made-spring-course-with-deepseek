@@ -26,6 +26,7 @@ OBRIGATÓRIO — passo a passo. Vale pra qualquer trabalho com mais de um passo:
 - Nomenclatura descritiva. Nada de nome de variável genérico.
 - Código descritivo vale mais que código curto. Não abrevia nome nem economiza linha à custa de clareza.
 - Prefira `var` quando o tipo é óbvio do lado direito (`new X()`, `List.of(...)`, `Map.of(...)`). Mantenha o tipo explícito quando ele não é evidente do lado direito ou é parte de contrato. `var` nunca em campo de classe, parâmetro ou retorno.
+- Nome de tabela no plural (convenção SQL). O JPA não pluraliza sozinho: o nome de tabela vai sempre explícito na entidade, ex. `@Table(name = "orders")`. Coluna fica no singular.
 - Prefira código descritivo a comentários. Explicação de aula pode ter comentário, código solto não.
 - Todo exemplo de código pertence a um projeto (ou lab) que roda. Nada de snippet solto.
 - Cada aula usa um projeto próprio. Não reaproveita o projeto das aulas anteriores; se precisar, cria um novo. A troca de projeto dentro da aula é suave: só muda o pacote no código ou uma menção breve, sem anunciar "novo projeto". O foco é a aula, não os projetos.
