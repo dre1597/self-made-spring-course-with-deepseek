@@ -406,11 +406,12 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     producer:
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
     consumer:
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: shop
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
-        spring.json.trusted.packages: com.example.shop
+        spring.json.trusted.packages: com.example.shop.*
 ```
 
 O `spring.json.trusted.packages` libera o deserializer a instanciar classes do pacote do evento; sem isso, o consumo recusa por segurança.

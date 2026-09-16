@@ -24,6 +24,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-artemis")
+    implementation("org.springframework.boot:spring-boot-starter-kafka")
     runtimeOnly("org.apache.activemq:artemis-jms-server")
     runtimeOnly("com.h2database:h2")
 }
