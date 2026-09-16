@@ -26,6 +26,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-artemis")
     implementation("org.springframework.boot:spring-boot-starter-kafka")
     implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.1"))
+    implementation("org.springframework.modulith:spring-modulith-starter-core")
+    implementation("org.springframework.modulith:spring-modulith-starter-jpa")
     runtimeOnly("org.apache.activemq:artemis-jms-server")
     runtimeOnly("com.h2database:h2")
 }

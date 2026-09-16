@@ -698,11 +698,12 @@ O resumo dos três canais: JMS é fila clássica ponto a ponto, simples e padrã
 Dependências da seção:
 
 ```kotlin
+implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.1"))
 implementation("org.springframework.modulith:spring-modulith-starter-core")
 implementation("org.springframework.modulith:spring-modulith-starter-jpa")
 ```
 
-O `core` traz o `@Modulithic` e o `@ApplicationModuleListener`; o `jpa` habilita o registro em tabela.
+O BOM extra existe porque o Modulith não é gerenciado pelo BOM do Boot (diferente de spring-kafka e spring-amqp) — sem ele, o Gradle não resolve as dependências por falta de versão. O `core` traz o `@Modulithic` e o `@ApplicationModuleListener`; o `jpa` habilita o registro em tabela.
 
 A aplicação ganha `@Modulithic`:
 
@@ -741,16 +742,13 @@ public class OrderCreatedIntegrationListener {
 }
 ```
 
-Configuração — cria a tabela do registro com o H2 e re-publica pendências no restart:
+Configuração — re-publica pendências no restart (a tabela do registro é uma entidade JPA; o Hibernate a cria com o `ddl-auto` do H2 que o projeto já usa):
 
 ```yaml
 spring:
   modulith:
-    republish-outstanding-events-on-restart: true
     events:
-      jpa:
-        schema-initialization:
-          enabled: true
+      republish-outstanding-events-on-restart: true
 ```
 
 **Pra testar este módulo:** nada externo — o H2 guarda o registro. Rode o app e use o `POST /api/orders` do módulo 1: além do log in-process, o evento vira linha na tabela `event_publication` (dá pra conferir no console do H2 ou num select no log). Pra ver a republicação: comente o `@ApplicationModuleListener`, crie um pedido, reinicie o app e descomente — o evento pendente é republicado e o listener roda.
