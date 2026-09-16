@@ -224,7 +224,10 @@ Dependência da seção:
 
 ```kotlin
 implementation("org.springframework.boot:spring-boot-starter-artemis")
+runtimeOnly("org.apache.activemq:artemis-jms-server")
 ```
+
+O starter traz o cliente JMS; o `artemis-jms-server` entra como `runtimeOnly` porque o modo `embedded` precisa do servidor Artemis embutido no classpath. A versão vem do BOM do Boot.
 
 Configuração — uma linha e o broker nasce dentro do app:
 
@@ -287,6 +290,30 @@ Existe também o recebimento síncrono, com timeout — útil quando o consumido
 Optional<OrderPlaced> received = jmsClient.destination("invoice-generation")
         .withReceiveTimeout(1000)
         .receive(OrderPlaced.class);
+```
+
+Tanto o envio quanto o consumo precisam de um conversor que serialize o record. O padrão do JMS (o `SimpleMessageConverter`) só aceita `String`, `byte[]`, `Map` e objetos `Serializable` — e um record Java não é `Serializable`. É por isso que o envio falha com `Cannot convert object of type [OrderPlaced] to JMS message` até você registrar este bean: um conversor Jackson que transforma o record em JSON. O Boot usa um único bean `MessageConverter` tanto pro `JmsClient` quanto pro listener container:
+
+```java
+package com.example.shop.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.support.converter.JacksonJsonMessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
+
+@Configuration
+public class JmsConfiguration {
+
+    @Bean
+    MessageConverter jacksonJmsMessageConverter() {
+        var converter = new JacksonJsonMessageConverter();
+        converter.setTargetType(MessageType.TEXT);
+        converter.setTypeIdPropertyName("_type");
+        return converter;
+    }
+}
 ```
 
 O controller entrega o teste deste módulo:
@@ -752,6 +779,7 @@ src/main/java/com/example/shop/
 │   ├── OrderAmqpController.java
 │   └── OrderCreatedIntegrationListener.java
 └── config/
+    ├── JmsConfiguration.java
     └── RabbitMqTopologyConfiguration.java
 src/main/resources/
 ├── application.yaml

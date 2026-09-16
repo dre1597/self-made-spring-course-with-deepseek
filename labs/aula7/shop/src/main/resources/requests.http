@@ -6,3 +6,13 @@ Content-Type: application/json
   "item": "Teclado mecânico",
   "amount": 299.90
 }
+
+### Envia nota fiscal pro JMS
+POST http://localhost:8080/api/jms/invoices
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "item": "Teclado mecânico",
+  "amount": 299.90
+}
