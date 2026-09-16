@@ -26,3 +26,13 @@ Content-Type: application/json
   "item": "Teclado mecânico",
   "amount": 299.90
 }
+
+### Publica no RabbitMQ
+POST http://localhost:8080/api/rabbit/publish
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "item": "Teclado mecânico",
+  "amount": 299.90
+}

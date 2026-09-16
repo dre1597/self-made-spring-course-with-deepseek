@@ -536,11 +536,18 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMqTopologyConfiguration {
+
+    @Bean
+    MessageConverter jacksonAmqpMessageConverter() {
+        return new JacksonJsonMessageConverter();
+    }
 
     @Bean
     TopicExchange orderExchange() {
@@ -567,7 +574,7 @@ public class RabbitMqTopologyConfiguration {
 }
 ```
 
-Publicação — `convertAndSend` serializa o evento (Jackson) e manda pra exchange com a routing key `order.created`:
+publicação — `convertAndSend` serializa o evento com o conversor acima e manda pra exchange com a routing key `order.created`:
 
 ```java
 package com.example.shop.order;
