@@ -24,14 +24,15 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
 }
 ```
 
 ## JUnit 6 e AssertJ
 
-O `spring-boot-starter-test` traz JUnit 6, AssertJ e Mockito. Os starters de teste dos slices trazem o suporte específico de cada fatia. O starter de segurança testa filtros e usuários simulados. O `spring-boot-testcontainers` integra `@ServiceConnection` ao Boot; `junit-jupiter` integra o ciclo de vida do container ao JUnit; `postgresql` fornece o módulo específico do banco.
+O `spring-boot-starter-test` traz JUnit 6, AssertJ e Mockito. Os starters de teste dos slices trazem o suporte específico de cada fatia. O starter de segurança testa filtros e usuários simulados. O `spring-boot-testcontainers` integra `@ServiceConnection` ao Boot; `testcontainers-junit-jupiter` integra o ciclo de vida do container ao JUnit; `testcontainers-postgresql` fornece o módulo específico do banco.
 
 O Boot 4 usa JUnit 6. A migração de um teste escrito com JUnit 5 costuma ser pequena: os imports de `org.junit.jupiter.api` continuam iguais, assim como os asserts do AssertJ. O projeto-base já configura o Gradle para executar a plataforma Jupiter.
 
@@ -648,7 +649,11 @@ class BookingServiceEventsTest {
 
 ## Testcontainers com PostgreSQL
 
-H2 ajuda a testar rápido, mas não implementa todos os detalhes do PostgreSQL. O Testcontainers sobe um PostgreSQL descartável e o `@ServiceConnection` entrega a conexão ao Spring Boot sem propriedades manuais.
+H2 ajuda a testar rápido, mas não implementa todos os detalhes do PostgreSQL. Neste teste não existe um PostgreSQL instalado na máquina nem um servidor iniciado pelo projeto. O Testcontainers pede ao Docker um container criado a partir da imagem `postgres:17`. Se a imagem ainda não estiver disponível, o Docker baixa; depois inicia um PostgreSQL temporário, com porta, banco, usuário e senha próprios daquele container.
+
+O `@ServiceConnection` lê os dados de conexão do container e entrega tudo ao Spring Boot. Por isso o teste não precisa de URL, porta ou credenciais fixas em `application.yaml`. Ao fim da classe, o Testcontainers para e remove o container. O único requisito externo é o Docker estar instalado e em execução.
+
+Docker Compose não é necessário neste caso. Ele seria útil se o teste precisasse iniciar uma topologia com PostgreSQL, RabbitMQ e outros serviços ao mesmo tempo. Para uma classe que testa o repositório contra um banco real, o container declarado no próprio teste é menor, isolado e começa sempre de um estado conhecido.
 
 ```java
 package com.example.cinema.screening;
@@ -661,7 +666,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -673,7 +678,7 @@ class ScreeningRepositoryPostgresTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
+    static var postgres = new PostgreSQLContainer("postgres:17");
 
     @Autowired
     ScreeningRepository screeningRepository;

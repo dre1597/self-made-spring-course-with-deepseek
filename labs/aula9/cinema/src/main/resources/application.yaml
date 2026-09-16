@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: cinema
+  datasource:
+    url: jdbc:h2:mem:cinema
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
