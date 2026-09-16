@@ -1,4 +1,4 @@
-# Aula 13 — Spring Batch
+# Aula 12 — Spring Batch
 
 Objetivo: processar transações em lote com Job, Step e chunk processing, observar a execução e retomá-la depois de uma falha.
 

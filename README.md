@@ -93,25 +93,27 @@ Curso pra quem já programa. Sem enrolação, sem artifício de cursinho. Cada m
 - Spring Cloud (discovery, config, gateway, circuit breaker).
 - MVC + virtual threads vs WebFlux (decisão de 2026).
 
-### 12. Projeto integrador
-
-- API completa: REST + JPA + Security + testes + observabilidade + eventos.
-
-### 13. Spring Batch
+### 12. Spring Batch
 
 - Job, Step e chunk processing.
 - `ItemReader` / `ItemProcessor` / `ItemWriter`.
 - `JobRepository`, `JobLauncher`, retomada e skip/retry.
 
-### 14. gRPC
+### 13. gRPC
 
 - Contrato em protobuf, `@GrpcService`, streaming.
 - Cliente com `GrpcChannelFactory` + stub.
 - gRPC vs REST.
 
-### 15. Spring AI
+### 14. Spring AI
 
 - `ChatClient`, prompts, system prompt.
 - Tool calling com `@Tool`.
 - RAG com embeddings + vector store.
 - Advisors (memória, `QuestionAnswerAdvisor`), MCP.
+
+### 15. Projeto integrador
+
+- Plataforma imobiliária com dois processos: `property-platform` e `maintenance-service`.
+- Fluxos de anúncio e visita, manutenção, assistente e relatório mensal.
+- REST, JPA, Security, Modulith, RabbitMQ, gRPC, Batch, AI, observabilidade e deploy.

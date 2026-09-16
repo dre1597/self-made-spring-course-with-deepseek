@@ -1,4 +1,4 @@
-# Aula 14 — gRPC
+# Aula 13 — gRPC
 
 Objetivo: definir um contrato protobuf, expor um serviço gRPC com Spring gRPC, consumir o stub gerado e testar uma chamada unária e um streaming.
 
