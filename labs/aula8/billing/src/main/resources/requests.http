@@ -1,0 +1,23 @@
+### Health consolidado — paymentGateway deve estar DOWN
+GET http://localhost:8080/actuator/health
+
+### Liveness — o processo tá vivo?
+GET http://localhost:8080/actuator/health/liveness
+
+### Readiness — tá pronto pra tráfego?
+GET http://localhost:8080/actuator/health/readiness
+
+### Catálogo de métricas
+GET http://localhost:8080/actuator/metrics
+
+### Request qualquer — cria trace com spans de infra
+GET http://localhost:8080/actuator/health
+
+### Cria uma fatura
+POST http://localhost:8080/api/invoices
+
+### A métrica de negócio no detalhe
+GET http://localhost:8080/actuator/metrics/billing.invoices.created
+
+### O método virou métrica
+GET http://localhost:8080/actuator/metrics/billing.create-invoice
