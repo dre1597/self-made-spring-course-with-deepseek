@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: observatory
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+app:
+  observatory:
+    station-name: local
+    reading-interval: 60s
+  alerting:
+    provider-api-key: ${ALERTING_PROVIDER_API_KEY}

@@ -1,0 +1,54 @@
+stages:
+  - test
+  - publish
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: /certs
+
+test:
+  stage: test
+  image: eclipse-temurin:25-jdk
+  services:
+    - name: docker:27.5.1-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - chmod +x gradlew
+    - ./gradlew test bootJar
+  artifacts:
+    paths:
+      - build/libs/observatory.jar
+
+publish-image:
+  stage: publish
+  image: docker:27.5.1
+  services:
+    - name: docker:27.5.1-dind
+      alias: docker
+  needs:
+    - job: test
+      artifacts: true
+  script:
+    - docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password "$CI_REGISTRY_PASSWORD"
+    - docker build --tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+deploy:
+  stage: deploy
+  image: bitnami/kubectl:1.31
+  needs:
+    - publish-image
+  environment:
+    name: production
+  script:
+    - mkdir -p "$HOME/.kube"
+    - printf '%s' "$KUBE_CONFIG_DATA" | base64 --decode > "$HOME/.kube/config"
+    - kubectl create secret docker-registry gitlab-registry-credentials --docker-server=registry.gitlab.com --docker-username="$GITLAB_REGISTRY_USER" --docker-password="$GITLAB_REGISTRY_TOKEN" --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret generic observatory-secrets --from-literal=alerting-provider-api-key="$ALERTING_PROVIDER_API_KEY" --dry-run=client -o yaml | kubectl apply -f -
+    - IMAGE_NAME="$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - sed "s|IMAGE_NAME_PLACEHOLDER|$IMAGE_NAME|g" k8s/deployment.yaml | kubectl apply -f -
+    - kubectl rollout status deployment/observatory --timeout=120s

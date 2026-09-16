@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observatory
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: observatory
+  template:
+    metadata:
+      labels:
+        app: observatory
+    spec:
+      imagePullSecrets:
+        - name: gitlab-registry-credentials
+      containers:
+        - name: observatory
+          image: IMAGE_NAME_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: ALERTING_PROVIDER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: observatory-secrets
+                  key: alerting-provider-api-key
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: observatory
+spec:
+  selector:
+    app: observatory
+  ports:
+    - port: 80
+      targetPort: 8080

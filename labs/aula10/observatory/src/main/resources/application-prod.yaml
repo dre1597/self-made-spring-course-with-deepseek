@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+app:
+  observatory:
+    station-name: central
+    reading-interval: 30s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

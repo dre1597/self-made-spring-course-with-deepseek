@@ -1,0 +1,2 @@
+### Consulta a configuração carregada
+GET http://localhost:8080/api/status
