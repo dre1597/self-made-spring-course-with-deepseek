@@ -1,0 +1,4 @@
+GET http://localhost:8888/learning-catalog/default
+
+###
+GET http://localhost:8081/api/courses

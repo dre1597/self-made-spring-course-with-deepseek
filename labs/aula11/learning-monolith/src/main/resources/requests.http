@@ -1,0 +1,11 @@
+### Catálogo local
+GET http://localhost:8080/api/courses
+
+### Publica curso e dispara evento modular
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "courseId": 1,
+  "title": "Arquitetura de sistemas"
+}

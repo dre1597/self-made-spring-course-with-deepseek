@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+          server:
+            native:
+              search-locations: file:${CONFIG_REPOSITORY:../config-repository}
+  profiles:
+    active: native
+server:
+  port: 8888
