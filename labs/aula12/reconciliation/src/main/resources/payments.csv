@@ -1,0 +1,4 @@
+transactionId,customerEmail,amount,status
+bank-001,ana@example.com,120.50,paid
+bank-002,bia@example.com,89,paid
+bank-003,caio@example.com,42.75,pending

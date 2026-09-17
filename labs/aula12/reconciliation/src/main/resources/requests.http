@@ -1,0 +1,13 @@
+# src/main/resources/requests.http
+### Dispara a conciliação
+POST http://localhost:8080/api/reconciliation/runs/{{$random.uuid}}
+
+> {%
+  client.global.set("executionId", response.body.executionId);
+%}
+
+### Consulta a execução retornada pelo POST
+GET http://localhost:8080/api/reconciliation/runs/{{executionId}}
+
+### Saúde da aplicação
+GET http://localhost:8080/actuator/health

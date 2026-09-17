@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: reconciliation
+  batch:
+    jdbc:
+      initialize-schema: embedded
+    job:
+      enabled: false
+server:
+  port: 8080
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
