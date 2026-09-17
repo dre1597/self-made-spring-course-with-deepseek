@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package fleet;
+
+option java_package = "com.example.fleetcontract.api";
+option java_multiple_files = true;
+
+service FleetTelemetry {
+  rpc GetVehicle(GetVehicleRequest) returns (Vehicle);
+  rpc StreamPositions(StreamPositionsRequest) returns (stream Position);
+}
+
+message GetVehicleRequest {
+  string vehicle_id = 1;
+}
+
+message StreamPositionsRequest {
+  string vehicle_id = 1;
+}
+
+message Vehicle {
+  string vehicle_id = 1;
+  string status = 2;
+  int32 battery_percentage = 3;
+}
+
+message Position {
+  string vehicle_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  int64 recorded_at_epoch_seconds = 4;
+}

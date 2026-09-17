@@ -1,0 +1,20 @@
+### Chamada unária
+GRPC localhost:9090/fleet.FleetTelemetry/GetVehicle
+
+{
+  "vehicleId": "bike-001"
+}
+
+### Streaming server-side
+GRPC localhost:9090/fleet.FleetTelemetry/StreamPositions
+
+{
+  "vehicleId": "bike-001"
+}
+
+### Veículo inexistente
+GRPC localhost:9090/fleet.FleetTelemetry/GetVehicle
+
+{
+  "vehicleId": "bike-404"
+}

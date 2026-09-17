@@ -1,0 +1,8 @@
+### Veículo pelo cliente de operações
+GET http://localhost:8080/api/fleet/bike-001
+
+### Posições pelo cliente de operações
+GET http://localhost:8080/api/fleet/bike-001/positions
+
+### Veículo inexistente pelo cliente
+GET http://localhost:8080/api/fleet/bike-404

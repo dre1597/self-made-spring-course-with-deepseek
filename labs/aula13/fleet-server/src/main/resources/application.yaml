@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: fleet-server
+  grpc:
+    server:
+      port: 9090
