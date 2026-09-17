@@ -1,0 +1,25 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: learning-enrollment
+  threads:
+    virtual:
+      enabled: true
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+resilience4j:
+  circuitbreaker:
+    instances:
+      catalog:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics

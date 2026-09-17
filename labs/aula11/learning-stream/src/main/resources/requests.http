@@ -1,0 +1,2 @@
+# learning-stream/src/main/resources/requests.http
+GET http://localhost:8083/api/progress

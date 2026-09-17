@@ -357,6 +357,7 @@ Execute o comando dentro do diretório do projeto `config-server`. Ele sobe o se
 Antes de iniciar o cliente, faça este smoke test. Ele não chama a API de cursos. Ele pergunta ao Config Server qual configuração foi encontrada para a aplicação `learning-catalog` no perfil `default`:
 
 ```http
+# config-server/src/main/resources/requests.http
 GET http://localhost:8888/learning-catalog/default
 ```
 
@@ -386,10 +387,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CatalogApplication {
+public class LearningCatalogApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CatalogApplication.class, args);
+        SpringApplication.run(LearningCatalogApplication.class, args);
     }
 }
 ```
@@ -436,6 +437,7 @@ spring:
 Com o Config Server ainda rodando, execute `./gradlew bootRun` dentro do diretório do `learning-catalog`. O serviço consulta o Config Server na inicialização, recebe `server.port: 8081` e expõe sua própria API:
 
 ```http
+# learning-catalog/src/main/resources/requests.http
 GET http://localhost:8081/api/courses
 ```
 
@@ -489,7 +491,7 @@ eureka:
     fetch-registry: false
 ```
 
-Suba o `eureka-server` e confirme que o painel responde em `http://localhost:8761`. Agora atualize o bloco de dependências do `learning-catalog` para incluir o client do Eureka:
+Execute `./gradlew bootRun` dentro do diretório do `eureka-server` e confirme que o painel responde em `http://localhost:8761`. Agora atualize o bloco de dependências do `learning-catalog` para incluir o client do Eureka:
 
 ```kotlin
 dependencyManagement {
@@ -506,6 +508,15 @@ testImplementation("org.springframework.boot:spring-boot-starter-test")
 ```
 
 Essa é a composição completa do catálogo depois da introdução de discovery; não é uma dependência solta fora do projeto.
+
+O Eureka também expõe uma API HTTP. Use este arquivo para verificar o registry:
+
+```http
+# eureka-server/src/main/resources/requests.http
+GET http://localhost:8761/eureka/apps
+```
+
+Com apenas o Eureka ligado, a resposta `200` pode vir com uma lista vazia. Depois que o `learning-catalog` reiniciar com a configuração de Eureka, a mesma requisição deve listar `LEARNING-CATALOG`.
 
 Substitua o arquivo `config-repository/learning-catalog.yaml` pelo arquivo completo abaixo. A porta continua `8081`; apenas acrescentamos o registro no Eureka:
 
@@ -524,88 +535,11 @@ eureka:
 
 Reinicie o `learning-catalog` depois de alterar a configuração. Consulte `http://localhost:8761/eureka/apps` para observar a instância registrada. Discovery resolve o nome, mas não transforma uma chamada HTTP comum em chamada balanceada; um cliente que deseja usar `lb://` precisa também do Spring Cloud LoadBalancer.
 
-### Gateway
-
-O cliente externo não deveria conhecer cada serviço nem suas portas internas. O gateway concentra a entrada HTTP e aplica regras de borda antes de encaminhar a requisição.
-
-O terceiro projeto distribuído é o `learning-gateway`, na porta `8084`. O gateway é a porta única de entrada: recebe a requisição externa, roteia para o serviço interno pelo nome do discovery e aplica filtros (auth, rate limit, rewrite). A porta `8080` continua pertencendo ao `learning-monolith`; o gateway não reutiliza essa porta.
-
-O Spring Cloud Gateway roda em cima do WebFlux:
-
-```java
-package com.example.learninggateway;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class GatewayApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(GatewayApplication.class, args);
-    }
-}
-```
-
-Roteamento por config:
-
-```yaml
-# learning-gateway/src/main/resources/application.yaml
-server:
-  port: 8084
-spring:
-  application:
-    name: learning-gateway
-  cloud:
-    gateway:
-      server:
-        webflux:
-          routes:
-            - id: catalog
-              uri: lb://learning-catalog
-              predicates:
-                - Path=/api/courses/**
-            - id: enrollment
-              uri: lb://learning-enrollment
-              predicates:
-                - Path=/api/recommendations/**
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-```
-
-`lb://learning-catalog` resolve o serviço pelo discovery e balanceia entre as instâncias. O cliente externo conhece o gateway em `8084`; os serviços internos ficam escondidos. Para observar o encaminhamento, mantenha `eureka-server`, `config-server`, `learning-catalog` e `learning-enrollment` rodando:
-
-```bash
-curl http://localhost:8084/api/courses
-curl http://localhost:8084/api/recommendations
-```
-
-Filtros entram por rota: rewrite de path, header extra e rate limit por usuário. As dependências completas do `learning-gateway` são:
-
-```kotlin
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.1.3")
-    }
-}
-
-implementation("org.springframework.boot:spring-boot-starter")
-implementation("org.springframework.boot:spring-boot-starter-webflux")
-implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
-implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
-testImplementation("org.springframework.boot:spring-boot-starter-test")
-```
-
-O gateway roda em cima do WebFlux (o starter traz o `webflux`), mesmo que os serviços atrás sejam MVC; ele só encaminha.
-
 ### Circuit breaker
 
 Quando o enrollment chama o catálogo, a falha deixa de ser uma exceção local. O catálogo pode estar lento, fora do ar ou respondendo com erro. Sem proteção, cada requisição ao enrollment fica presa esperando uma dependência que não vai responder.
 
-O quarto projeto distribuído é o `learning-enrollment`, na porta `8082`. Ele não é o módulo de matrículas do monólito: é uma aplicação nova que consulta o `learning-catalog` pela rede.
+O terceiro projeto distribuído é o `learning-enrollment`, na porta `8082`. Ele não é o módulo de matrículas do monólito: é uma aplicação nova que consulta o `learning-catalog` pela rede.
 
 Sua classe principal também pertence ao próprio projeto:
 
@@ -616,10 +550,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class EnrollmentApplication {
+public class LearningEnrollmentApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(EnrollmentApplication.class, args);
+        SpringApplication.run(LearningEnrollmentApplication.class, args);
     }
 }
 ```
@@ -640,11 +574,11 @@ implementation("org.springframework.boot:spring-boot-starter-webmvc")
 implementation("org.springframework.boot:spring-boot-starter-restclient")
 implementation("org.springframework.boot:spring-boot-starter-actuator")
 implementation("org.springframework.boot:spring-boot-starter-aspectj")
+implementation("org.springframework.cloud:spring-cloud-starter-config")
 implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
-implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
-implementation("io.github.resilience4j:resilience4j-spring-boot4")
-implementation("io.github.resilience4j:resilience4j-micrometer")
+implementation("io.github.resilience4j:resilience4j-spring-boot4:2.4.0")
+implementation("io.github.resilience4j:resilience4j-micrometer:2.4.0")
 testImplementation("org.springframework.boot:spring-boot-starter-test")
 ```
 
@@ -653,21 +587,31 @@ O `@LoadBalanced` permite usar o nome registrado no Eureka como host:
 ```java
 package com.example.learningenrollment;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.client.RestClient;
 
 @Configuration
 public class EnrollmentClientConfiguration {
 
     @Bean
+    @Primary
+    RestClient.Builder directRestClientBuilder() {
+        return RestClient.builder();
+    }
+
+    @Bean
     @LoadBalanced
-    RestClient.Builder restClientBuilder() {
+    RestClient.Builder loadBalancedRestClientBuilder() {
         return RestClient.builder();
     }
 }
 ```
+
+O builder direto fica como `@Primary` para componentes internos, como o cliente HTTP do Eureka. O builder com `@LoadBalanced` fica reservado para chamadas que usam nomes de serviço, como `http://learning-catalog`.
 
 O serviço chama o catálogo e devolve uma recomendação de contingência quando o circuito abre:
 
@@ -677,6 +621,7 @@ package com.example.learningenrollment;
 import java.util.List;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -685,7 +630,8 @@ public class CourseRecommendationService {
 
     private final RestClient restClient;
 
-    public CourseRecommendationService(RestClient.Builder builder) {
+    public CourseRecommendationService(
+            @Qualifier("loadBalancedRestClientBuilder") RestClient.Builder builder) {
         this.restClient = builder.baseUrl("http://learning-catalog").build();
     }
 
@@ -735,10 +681,10 @@ public class RecommendationController {
 }
 ```
 
-Mantenha este arquivo completo em `learning-enrollment/src/main/resources/application.yaml`:
+Crie o arquivo completo `config-repository/learning-enrollment.yaml`:
 
 ```yaml
-# learning-enrollment/src/main/resources/application.yaml
+# config-repository/learning-enrollment.yaml
 server:
   port: 8082
 spring:
@@ -766,6 +712,28 @@ management:
         include: health,metrics
 ```
 
+O `learning-enrollment` também busca configuração no Config Server. Mantenha este arquivo local apenas com a identidade do cliente e o import da fonte externa:
+
+```yaml
+# learning-enrollment/src/main/resources/application.yaml
+spring:
+  application:
+    name: learning-enrollment
+  config:
+    import: configserver:http://localhost:8888
+```
+
+Com o `config-server`, o `eureka-server` e o `learning-catalog` rodando, execute `./gradlew bootRun` dentro do diretório do `learning-enrollment`.
+
+Use este request para testar o enrollment enquanto o catálogo está disponível:
+
+```http
+# learning-enrollment/src/main/resources/requests.http
+GET http://localhost:8082/api/recommendations
+```
+
+A resposta deve conter o curso retornado pelo `learning-catalog`. Se o catálogo estiver indisponível e o circuito entrar em fallback, a lista conterá `Catálogo indisponível`.
+
 `failureRateThreshold: 50` abre o circuito quando metade das últimas dez chamadas falha. Para observar, pare o `learning-catalog` e deixe o `learning-enrollment` rodando. O enrollment continua disponível, mas a chamada ao catálogo falha e o Resilience4j registra essas falhas:
 
 ```bash
@@ -776,11 +744,109 @@ done
 
 Depois do limite, a resposta passa a ser `Catálogo indisponível` sem tentar chamar o catálogo a cada requisição. O endpoint `/actuator/metrics/resilience4j.circuitbreaker.calls` mostra as chamadas do circuito quando o Actuator estiver exposto. Religue o catálogo e aguarde os 30 segundos de `waitDurationInOpenState` para a chamada de teste.
 
+### Gateway
+
+O cliente externo não deveria conhecer cada serviço nem suas portas internas. O gateway concentra a entrada HTTP e aplica regras de borda antes de encaminhar a requisição.
+
+O quarto projeto distribuído é o `learning-gateway`, na porta `8084`. O gateway é a porta única de entrada: recebe a requisição externa, roteia para o serviço interno pelo nome do discovery e aplica filtros (auth, rate limit, rewrite). A porta `8080` continua pertencendo ao `learning-monolith`; o gateway não reutiliza essa porta.
+
+O Spring Cloud Gateway roda em cima do WebFlux:
+
+```java
+package com.example.learninggateway;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class LearningGatewayApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(LearningGatewayApplication.class, args);
+    }
+}
+```
+
+Neste ponto, `learning-catalog` e `learning-enrollment` já foram apresentados, implementados e registrados no Eureka. Agora o gateway pode declarar as duas rotas sem apontar para um serviço ainda não criado.
+
+Roteamento por configuração externa:
+
+```yaml
+# config-repository/learning-gateway.yaml
+server:
+  port: 8084
+spring:
+  application:
+    name: learning-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: catalog
+              uri: lb://learning-catalog
+              predicates:
+                - Path=/api/courses/**
+            - id: enrollment
+              uri: lb://learning-enrollment
+              predicates:
+                - Path=/api/recommendations/**
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+```
+
+O `learning-gateway` também importa o Config Server. Seu arquivo local contém apenas a identidade da aplicação e a origem da configuração:
+
+```yaml
+# learning-gateway/src/main/resources/application.yaml
+spring:
+  application:
+    name: learning-gateway
+  config:
+    import: configserver:http://localhost:8888
+```
+
+`lb://learning-catalog` e `lb://learning-enrollment` resolvem os serviços pelo discovery e balanceiam entre as instâncias. O cliente externo conhece o gateway em `8084`; os serviços internos ficam escondidos. Mantenha `eureka-server`, `config-server`, `learning-catalog`, `learning-enrollment` e `learning-gateway` rodando nesta etapa:
+
+```http
+### Catálogo pelo gateway
+GET http://localhost:8084/api/courses
+
+### Recomendações pelo gateway
+GET http://localhost:8084/api/recommendations
+```
+
+O primeiro request chega ao `CourseCatalogController` do `learning-catalog`. O segundo chega ao `RecommendationController` do `learning-enrollment`, que consulta o catálogo usando o `RestClient`. Os dois requests entram pela mesma porta, mas continuam atendendo processos diferentes.
+
+Filtros entram por rota: rewrite de path, header extra e rate limit por usuário. As dependências completas do `learning-gateway` são:
+
+```kotlin
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.1.3")
+    }
+}
+
+implementation("org.springframework.boot:spring-boot-starter")
+implementation("org.springframework.boot:spring-boot-starter-webflux")
+implementation("org.springframework.cloud:spring-cloud-starter-config")
+implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webflux")
+implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
+testImplementation("org.springframework.boot:spring-boot-starter-test")
+```
+
+O gateway roda em cima do WebFlux (o starter traz o `webflux`), mesmo que os serviços atrás sejam MVC; ele só encaminha.
+
+Com `config-server`, `eureka-server`, `learning-catalog` e `learning-enrollment` rodando, execute `./gradlew bootRun` dentro do diretório do `learning-gateway`. Depois, envie os dois requests mostrados acima.
+
 ## MVC + virtual threads vs WebFlux
 
 A distribuição dos serviços não obriga todos eles a usarem o mesmo modelo HTTP. Para o catálogo e o enrollment, o código é síncrono: JPA e `RestClient` são bloqueantes. MVC com virtual threads combina com esse domínio e reduz o custo de esperar I/O sem exigir que tudo vire reativo.
 
-As virtual threads já estão habilitadas no `application.yaml` completo do `learning-enrollment`. Uma virtual thread ainda consome memória e ainda pode segurar conexão de banco ou socket. Ela não transforma uma chamada bloqueante em não bloqueante; apenas evita ocupar uma thread de plataforma durante parte da espera.
+As virtual threads já estão habilitadas na configuração remota completa do `learning-enrollment`. Uma virtual thread ainda consome memória e ainda pode segurar conexão de banco ou socket. Ela não transforma uma chamada bloqueante em não bloqueante; apenas evita ocupar uma thread de plataforma durante parte da espera.
 
 WebFlux é outra escolha, não uma evolução automática de MVC. Ele faz sentido quando o fluxo reativo atravessa a aplicação inteira, como um serviço de streaming de progresso. Para comparar sem misturar configurações, esse serviço será outro projeto, separado do catálogo:
 
@@ -799,10 +865,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class StreamApplication {
+public class LearningStreamApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(StreamApplication.class, args);
+        SpringApplication.run(LearningStreamApplication.class, args);
     }
 }
 ```
@@ -817,6 +883,8 @@ spring:
 server:
   port: 8083
 ```
+
+Execute `./gradlew bootRun` dentro do diretório do `learning-stream`.
 
 ```java
 package com.example.learningstream;
@@ -842,6 +910,13 @@ public class ProgressStreamController {
 }
 ```
 
+Use este request para abrir o stream no cliente HTTP:
+
+```http
+# learning-stream/src/main/resources/requests.http
+GET http://localhost:8083/api/progress
+```
+
 Observe o streaming sem o cliente esperar o corpo inteiro:
 
 ```bash
@@ -862,8 +937,10 @@ Os projetos distribuídos mostram o custo adicional da separação: configuraç�
 
 Execute os projetos em grupos separados. Para entender o monólito, basta iniciar `learning-monolith` em `8080`. Para testar a versão distribuída, pare ou deixe o monólito fora desse fluxo e inicie os projetos nesta ordem:
 
-1. `eureka-server` em `8761`;
-2. `config-server` em `8888`;
+Antes de iniciar os clientes, confirme que `config-repository/learning-catalog.yaml`, `config-repository/learning-enrollment.yaml` e `config-repository/learning-gateway.yaml` existem. O `config-server` entrega esses arquivos pelo nome de cada aplicação.
+
+1. `config-server` em `8888`;
+2. `eureka-server` em `8761`;
 3. `learning-catalog` em `8081`;
 4. `learning-enrollment` em `8082`;
 5. `learning-gateway` em `8084`.
@@ -894,37 +971,44 @@ config-server/
 ├── src/main/java/com/example/configserver/
 │   └── ConfigServerApplication.java
 └── src/main/resources/
-    └── application.yaml
+    ├── application.yaml
+    └── requests.http
 config-repository/
-└── learning-catalog.yaml
+├── learning-catalog.yaml
+├── learning-enrollment.yaml
+└── learning-gateway.yaml
 eureka-server/
 ├── src/main/java/com/example/eurekaserver/
 │   └── EurekaServerApplication.java
 └── src/main/resources/
-    └── application.yaml
+    ├── application.yaml
+    └── requests.http
 learning-catalog/
 ├── src/main/java/com/example/learningcatalog/
-│   ├── CatalogApplication.java
+│   ├── LearningCatalogApplication.java
 │   └── CourseCatalogController.java
 └── src/main/resources/
-    └── application.yaml
+    ├── application.yaml
+    └── requests.http
 learning-enrollment/
 ├── src/main/java/com/example/learningenrollment/
-│   ├── EnrollmentApplication.java
+│   ├── LearningEnrollmentApplication.java
 │   ├── CourseRecommendationService.java
 │   ├── EnrollmentClientConfiguration.java
 │   └── RecommendationController.java
 └── src/main/resources/
-    └── application.yaml
+    ├── application.yaml
+    └── requests.http
 learning-gateway/
 ├── src/main/java/com/example/learninggateway/
-│   └── GatewayApplication.java
+│   └── LearningGatewayApplication.java
 └── src/main/resources/
     └── application.yaml
 learning-stream/
 ├── src/main/java/com/example/learningstream/
 │   ├── ProgressStreamController.java
-│   └── StreamApplication.java
+│   └── LearningStreamApplication.java
 └── src/main/resources/
-    └── application.yaml
+    ├── application.yaml
+    └── requests.http
 ```

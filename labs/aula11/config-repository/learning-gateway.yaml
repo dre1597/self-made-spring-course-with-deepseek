@@ -1,0 +1,22 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: learning-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: catalog
+              uri: lb://learning-catalog
+              predicates:
+                - Path=/api/courses/**
+            - id: enrollment
+              uri: lb://learning-enrollment
+              predicates:
+                - Path=/api/recommendations/**
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

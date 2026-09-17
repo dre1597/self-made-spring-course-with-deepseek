@@ -1,0 +1,5 @@
+### Catálogo pelo gateway
+GET http://localhost:8084/api/courses
+
+### Recomendações pelo gateway
+GET http://localhost:8084/api/recommendations
