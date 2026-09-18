@@ -12,7 +12,7 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: llama3.1
+        model: qwen2.5
       embedding:
         model: nomic-embed-text
     vectorstore:

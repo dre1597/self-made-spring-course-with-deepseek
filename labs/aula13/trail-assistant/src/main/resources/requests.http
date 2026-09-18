@@ -27,10 +27,20 @@ Content-Type: application/json
 POST http://localhost:8080/api/assistant/index
 
 
-### RAG
+### RAG: trilha com guia indexado
+# @timeout 2 m
 POST http://localhost:8080/api/assistant/ask
 Content-Type: application/json
 
 {
-  "question": "Qual trilha exige cuidado depois de chuva forte?"
+  "question": "Têm algum interesse arqueológico na Pedra da Gávea?"
+}
+
+### RAG: trilha sem guia indexado
+# @timeout 2 m
+POST http://localhost:8080/api/assistant/ask
+Content-Type: application/json
+
+{
+  "question": "A trilha do Caminho da Lagartixa tem trecho exposto?"
 }
