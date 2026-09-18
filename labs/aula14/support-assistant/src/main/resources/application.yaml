@@ -1,0 +1,26 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: support-assistant
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen2.5:7b
+        temperature: 0.3
+      embedding:
+        model: nomic-embed-text
+    mcp:
+      client:
+        enabled: true
+        name: support-assistant
+        version: 1.0.0
+        type: SYNC
+        initialized: true
+        request-timeout: 30s
+        streamable-http:
+          connections:
+            inventory:
+              url: http://localhost:8081
+              endpoint: /mcp

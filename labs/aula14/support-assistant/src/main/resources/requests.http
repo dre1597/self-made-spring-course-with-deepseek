@@ -1,0 +1,46 @@
+# support-assistant/src/main/resources/requests.http
+
+### Chat com prompt de sistema
+POST http://localhost:8080/api/assistant/chat
+Content-Type: application/json
+
+{
+  "conversationId": "cliente-ana",
+  "message": "Meu nome é Ana. Recomende um livro de Machado de Assis."
+}
+
+### Mesma conversa, pergunta que depende do histórico
+POST http://localhost:8080/api/assistant/chat
+Content-Type: application/json
+
+{
+  "conversationId": "cliente-ana",
+  "message": "Qual é o meu nome?"
+}
+
+### Status de pedido (tool calling local)
+POST http://localhost:8080/api/assistant/orders
+Content-Type: application/json
+
+{
+  "message": "Qual o status do pedido PV-1001?"
+}
+
+### Busca no vector store (RAG, sem modelo)
+GET http://localhost:8080/api/assistant/search?question=Qual é o prazo de entrega?
+
+### Pergunta sobre política (QuestionAnswerAdvisor)
+POST http://localhost:8080/api/assistant/faq
+Content-Type: application/json
+
+{
+  "question": "Posso devolver um livro 20 dias depois de receber?"
+}
+
+### Estoque via MCP
+POST http://localhost:8080/api/assistant/stock
+Content-Type: application/json
+
+{
+  "message": "Quantos exemplares de Dom Casmurro a loja tem em estoque?"
+}
