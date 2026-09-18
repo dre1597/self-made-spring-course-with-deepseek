@@ -1,0 +1,36 @@
+POST http://localhost:8080/api/assistant/ask
+Content-Type: application/json
+
+{
+  "question": "Qual trilha combina com uma caminhada curta?"
+}
+
+### Tool calling
+# @timeout 2 m
+POST http://localhost:8080/api/assistant/ask
+Content-Type: application/json
+
+{
+  "question": "Quais trilhas fáceis existem no Rio de Janeiro?"
+}
+
+### Tool calling
+# @timeout 2 m
+POST http://localhost:8080/api/assistant/ask
+Content-Type: application/json
+
+{
+  "question": "Quais trilhas difíceis existem no Rio de Janeiro?"
+}
+
+### indexar
+POST http://localhost:8080/api/assistant/index
+
+
+### RAG
+POST http://localhost:8080/api/assistant/ask
+Content-Type: application/json
+
+{
+  "question": "Qual trilha exige cuidado depois de chuva forte?"
+}

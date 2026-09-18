@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: trail-assistant
+  datasource:
+    url: jdbc:postgresql://localhost:5432/trail_assistant
+    username: trail
+    password: trail
+  jpa:
+    hibernate:
+      ddl-auto: update
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: llama3.1
+      embedding:
+        model: nomic-embed-text
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        dimensions: 768
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+server:
+  port: 8080
