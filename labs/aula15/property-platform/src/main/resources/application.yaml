@@ -1,0 +1,28 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: property-platform
+  datasource:
+    url: jdbc:h2:mem:property;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  modulith:
+    events:
+      republish-outstanding-events-on-restart: true
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:dev-secret-com-pelo-menos-32-caracteres}
+    users:
+      - username: agent
+        password: $2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG
+        roles:
+          - AGENT
+      - username: client
+        password: $2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG
+        roles:
+          - CLIENT

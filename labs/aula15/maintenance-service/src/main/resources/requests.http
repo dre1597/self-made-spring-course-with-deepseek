@@ -1,0 +1,48 @@
+### Login do corretor
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "agent", "password": "password" }
+
+> {%
+  client.global.set("agentToken", response.body.token);
+%}
+
+### Login do cliente
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "client", "password": "password" }
+
+> {%
+  client.global.set("clientToken", response.body.token);
+%}
+
+### Cria anúncio
+POST http://localhost:8080/api/properties
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+
+{
+  "title": "Apartamento 2 quartos em Botafogo",
+  "city": "Rio de Janeiro",
+  "monthlyRent": 3200.00
+}
+
+### Lista anúncios
+GET http://localhost:8080/api/properties
+Authorization: Bearer {{clientToken}}
+
+### Lista sem token
+GET http://localhost:8080/api/properties
+
+### Cliente tenta criar anúncio
+POST http://localhost:8080/api/properties
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{
+  "title": "Casa",
+  "city": "Niterói",
+  "monthlyRent": 2000.00
+}

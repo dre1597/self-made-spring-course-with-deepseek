@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package maintenance;
+
+option java_package = "com.example.maintenancecontract.api";
+option java_multiple_files = true;
+
+service MaintenanceService {
+  rpc OpenServiceOrder(OpenServiceOrderRequest) returns (ServiceOrder);
+  rpc GetServiceOrder(GetServiceOrderRequest) returns (ServiceOrder);
+}
+
+message OpenServiceOrderRequest {
+  string property_id = 1;
+  string description = 2;
+  string priority = 3;
+}
+
+message GetServiceOrderRequest {
+  string order_id = 1;
+}
+
+message ServiceOrder {
+  string order_id = 1;
+  string property_id = 2;
+  string description = 3;
+  string priority = 4;
+  string status = 5;
+  int64 opened_at_epoch_seconds = 6;
+}
