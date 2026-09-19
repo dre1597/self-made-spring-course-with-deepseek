@@ -11,6 +11,11 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
   modulith:
     events:
       republish-outstanding-events-on-restart: true

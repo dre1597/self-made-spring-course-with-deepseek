@@ -46,3 +46,18 @@ Content-Type: application/json
   "city": "Niterói",
   "monthlyRent": 2000.00
 }
+
+### Agenda visita
+< {%
+  const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  request.variables.set("scheduledAt", scheduledAt);
+%}
+POST http://localhost:8080/api/visits
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{
+  "propertyId": 1,
+  "visitorName": "Ana",
+  "scheduledAt": "{{scheduledAt}}"
+}

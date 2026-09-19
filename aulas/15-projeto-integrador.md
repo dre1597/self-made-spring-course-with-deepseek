@@ -1213,6 +1213,10 @@ Suba o RabbitMQ (`docker compose up -d` no diretório do compose) e o `property-
 
 ```http
 ### Agenda visita
+< {%
+    const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    request.variables.set("scheduledAt", scheduledAt);
+%}
 POST http://localhost:8080/api/visits
 Authorization: Bearer {{clientToken}}
 Content-Type: application/json
@@ -1220,7 +1224,7 @@ Content-Type: application/json
 {
   "propertyId": 1,
   "visitorName": "Ana",
-  "scheduledAt": "{{$datetime iso8601 1 d}}"
+  "scheduledAt": "{{scheduledAt}}"
 }
 ```
 
