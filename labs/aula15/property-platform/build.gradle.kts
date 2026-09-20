@@ -29,6 +29,8 @@ dependencies {
     implementation(platform("org.springframework.modulith:spring-modulith-bom:2.1.1"))
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
     implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.boot:spring-boot-starter-grpc-client")
+    implementation("com.example:maintenance-contract:1.0.0")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")

@@ -7,9 +7,9 @@ spring:
     server:
       port: 9090
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:maintenance;DB_CLOSE_DELAY=-1}
-    username: ${DB_USER:sa}
-    password: ${DB_PASSWORD:}
+    url: jdbc:h2:mem:maintenance;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
   jpa:
     hibernate:
       ddl-auto: update
@@ -22,29 +22,3 @@ spring:
     listener:
       simple:
         default-requeue-rejected: false
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
-  tracing:
-    sampling:
-      probability: 1.0
-  otlp:
-    metrics:
-      export:
-        url: ${OTLP_METRICS_URL:http://localhost:4318/v1/metrics}
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: ${OTLP_TRACES_URL:http://localhost:4318/v1/traces}
-    logging:
-      export:
-        otlp:
-          endpoint: ${OTLP_LOGS_URL:http://localhost:4318/v1/logs}

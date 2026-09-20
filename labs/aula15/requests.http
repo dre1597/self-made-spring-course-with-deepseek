@@ -61,3 +61,14 @@ Content-Type: application/json
   "visitorName": "Ana",
   "scheduledAt": "{{scheduledAt}}"
 }
+
+### Abre pedido de manutenção
+POST http://localhost:8080/api/maintenance-requests
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{
+  "propertyId": 1,
+  "description": "Vazamento na cozinha",
+  "priority": "HIGH"
+}
