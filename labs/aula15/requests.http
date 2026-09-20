@@ -72,3 +72,31 @@ Content-Type: application/json
   "description": "Vazamento na cozinha",
   "priority": "HIGH"
 }
+
+### Assistente busca imóveis
+POST http://localhost:8080/api/assistant/properties
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{ "message": "Tem apartamento de até 3500 no Rio de Janeiro?" }
+
+### Assistente responde política
+POST http://localhost:8080/api/assistant/faq
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{ "question": "Posso levar meu cachorro?" }
+
+### Busca no vector store, sem modelo
+GET http://localhost:8080/api/assistant/search?question=Qual a política de visita?
+Authorization: Bearer {{clientToken}}
+
+### Chat com memória
+POST http://localhost:8080/api/assistant/chat
+Authorization: Bearer {{clientToken}}
+Content-Type: application/json
+
+{
+  "conversationId": "cliente-ana",
+  "message": "Meu nome é Ana. Recomende um imóvel."
+}

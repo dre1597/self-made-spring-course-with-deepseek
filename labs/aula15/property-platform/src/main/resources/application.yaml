@@ -19,6 +19,14 @@ spring:
   modulith:
     events:
       republish-outstanding-events-on-restart: true
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen2.5:7b
+        temperature: 0.3
+      embedding:
+        model: nomic-embed-text
 app:
   security:
     jwt-secret: ${JWT_SECRET:dev-secret-com-pelo-menos-32-caracteres}
