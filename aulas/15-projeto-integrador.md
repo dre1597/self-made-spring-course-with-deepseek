@@ -3441,7 +3441,9 @@ Suba tudo com `docker compose up -d`. A API fica em `8080`, o gRPC em `9090`, a 
 
 ### Kubernetes
 
-O Actuator já publica os probes que o Kubernetes consome. O `Deployment` do `property-platform` aponta liveness e readiness para os endpoints e injeta os segredos por `secretKeyRef` (aula 10):
+O Actuator publica os probes que o Kubernetes consome. Cada serviço tem o seu manifest, com Deployment e Service. O `property-platform` injeta o segredo por `secretKeyRef` (aula 10). As imagens apontam para `registry.example.com`; troque pelo registro onde você publicou `property-platform` e `maintenance-service`.
+
+`property-platform/k8s/deployment.yaml`:
 
 ```yaml
 apiVersion: apps/v1
@@ -3466,6 +3468,18 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: APP_MAINTENANCE_GRPC_TARGET
+              value: maintenance-service:9090
+            - name: SPRING_AI_OLLAMA_BASE_URL
+              value: http://ollama:11434
+            - name: OTLP_METRICS_URL
+              value: http://otel-lgtm:4318/v1/metrics
+            - name: OTLP_TRACES_URL
+              value: http://otel-lgtm:4318/v1/traces
+            - name: OTLP_LOGS_URL
+              value: http://otel-lgtm:4318/v1/logs
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -3479,9 +3493,96 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: property-platform
+spec:
+  selector:
+    app: property-platform
+  ports:
+    - port: 80
+      targetPort: 8080
 ```
 
-O `maintenance-service` usa o mesmo desenho, com `containerPort` `9090` e as probes na porta `8081`. A liveness reinicia o pod quando o processo trava; a readiness tira o pod do tráfego enquanto ele não está pronto. O Kubernetes não lê o `application.yaml`; ele só chama os endpoints configurados no manifest.
+`maintenance-service/k8s/deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: maintenance-service
+  template:
+    metadata:
+      labels:
+        app: maintenance-service
+    spec:
+      containers:
+        - name: maintenance-service
+          image: registry.example.com/maintenance-service:latest
+          ports:
+            - containerPort: 9090
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: OTLP_METRICS_URL
+              value: http://otel-lgtm:4318/v1/metrics
+            - name: OTLP_TRACES_URL
+              value: http://otel-lgtm:4318/v1/traces
+            - name: OTLP_LOGS_URL
+              value: http://otel-lgtm:4318/v1/logs
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance-service
+spec:
+  selector:
+    app: maintenance-service
+  ports:
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+    - name: management
+      port: 8081
+      targetPort: 8081
+```
+
+O `maintenance-service` expõe o gRPC na `9090`, que o `property-platform` acessa por `APP_MAINTENANCE_GRPC_TARGET`, e a gestão na `8081`, onde as probes batem. Os hosts `rabbitmq`, `ollama` e `otel-lgtm` são Services do cluster: o RabbitMQ, o Ollama e o stack LGTM entram como dependências de infraestrutura, com a mesma topologia do compose.
+
+O segredo do JWT é criado fora do manifest:
+
+```bash
+export JWT_SECRET=dev-secret-com-pelo-menos-32-caracteres
+kubectl create secret generic property-platform-secrets \
+  --from-literal=jwt-secret="$JWT_SECRET"
+```
+
+Aplique os dois manifests:
+
+```bash
+kubectl apply -f property-platform/k8s/deployment.yaml
+kubectl apply -f maintenance-service/k8s/deployment.yaml
+```
+
+A liveness reinicia o pod quando o processo trava; a readiness tira o pod do tráfego enquanto ele não está pronto. O Kubernetes não lê o `application.yaml`; ele só chama os endpoints configurados nos manifests.
 
 ### Teste
 
@@ -3605,6 +3706,7 @@ property-platform/
 maintenance-service/
 ├── build.gradle.kts
 ├── Dockerfile
+├── k8s/deployment.yaml
 └── src/
     ├── main/java/com/example/maintenanceservice/
     │   ├── MaintenanceServiceApplication.java

@@ -11,3 +11,40 @@ services:
       - "3000:3000"
       - "4317:4317"
       - "4318:4318"
+
+  maintenance-service:
+    image: maintenance-service:local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "9090:9090"
+      - "8081:8081"
+    depends_on:
+      - rabbitmq
+      - otel-lgtm
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_RABBITMQ_HOST: rabbitmq
+      OTLP_METRICS_URL: http://otel-lgtm:4318/v1/metrics
+      OTLP_TRACES_URL: http://otel-lgtm:4318/v1/traces
+      OTLP_LOGS_URL: http://otel-lgtm:4318/v1/logs
+
+  property-platform:
+    image: property-platform:local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+      - otel-lgtm
+      - maintenance-service
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_RABBITMQ_HOST: rabbitmq
+      APP_MAINTENANCE_GRPC_TARGET: maintenance-service:9090
+      SPRING_AI_OLLAMA_BASE_URL: http://host.docker.internal:11434
+      JWT_SECRET: ${JWT_SECRET:dev-secret-com-pelo-menos-32-caracteres}
+      OTLP_METRICS_URL: http://otel-lgtm:4318/v1/metrics
+      OTLP_TRACES_URL: http://otel-lgtm:4318/v1/traces
+      OTLP_LOGS_URL: http://otel-lgtm:4318/v1/logs

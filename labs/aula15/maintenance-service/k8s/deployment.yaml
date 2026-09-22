@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: maintenance-service
+  template:
+    metadata:
+      labels:
+        app: maintenance-service
+    spec:
+      containers:
+        - name: maintenance-service
+          image: registry.example.com/maintenance-service:latest
+          ports:
+            - containerPort: 9090
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: OTLP_METRICS_URL
+              value: http://otel-lgtm:4318/v1/metrics
+            - name: OTLP_TRACES_URL
+              value: http://otel-lgtm:4318/v1/traces
+            - name: OTLP_LOGS_URL
+              value: http://otel-lgtm:4318/v1/logs
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maintenance-service
+spec:
+  selector:
+    app: maintenance-service
+  ports:
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+    - name: management
+      port: 8081
+      targetPort: 8081
