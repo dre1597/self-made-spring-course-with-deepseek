@@ -100,3 +100,15 @@ Content-Type: application/json
   "conversationId": "cliente-ana",
   "message": "Meu nome é Ana. Recomende um imóvel."
 }
+
+### Dispara o relatório mensal
+POST http://localhost:8080/api/reports/monthly/2026-09
+Authorization: Bearer {{agentToken}}
+
+> {%
+  client.global.set("executionId", response.body.executionId);
+%}
+
+### Consulta o status do relatório
+GET http://localhost:8080/api/reports/monthly/runs/{{executionId}}
+Authorization: Bearer {{agentToken}}

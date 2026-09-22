@@ -16,6 +16,11 @@ spring:
     port: 5672
     username: guest
     password: guest
+  batch:
+    jdbc:
+      initialize-schema: embedded
+    job:
+      enabled: false
   modulith:
     events:
       republish-outstanding-events-on-restart: true
