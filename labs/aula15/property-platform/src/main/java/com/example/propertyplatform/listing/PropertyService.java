@@ -3,6 +3,10 @@ package com.example.propertyplatform.listing;
 import java.math.BigDecimal;
 import java.util.List;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.annotation.Observed;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,13 +15,21 @@ public class PropertyService implements PropertyCatalog {
 
   private final PropertyRepository repository;
 
-  public PropertyService(PropertyRepository repository) {
+  private final Counter createdListings;
+
+  public PropertyService(PropertyRepository repository, MeterRegistry meterRegistry) {
     this.repository = repository;
+    this.createdListings = Counter.builder("property.listings.created")
+        .description("Anúncios criados")
+        .register(meterRegistry);
   }
 
   @Transactional
+  @Observed(name = "property.create-listing")
   public Property create(String title, String city, BigDecimal monthlyRent) {
-    return repository.save(new Property(title, city, monthlyRent));
+    Property property = repository.save(new Property(title, city, monthlyRent));
+    createdListings.increment();
+    return property;
   }
 
   @Transactional(readOnly = true)

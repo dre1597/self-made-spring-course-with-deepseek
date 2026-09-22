@@ -4,6 +4,9 @@ import com.example.maintenancecontract.api.MaintenanceServiceGrpc;
 import com.example.maintenancecontract.api.OpenServiceOrderRequest;
 import com.example.maintenancecontract.api.ServiceOrder;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,11 +17,17 @@ public class MaintenanceRequestService {
 
   private final MaintenanceServiceGrpc.MaintenanceServiceBlockingStub maintenanceService;
 
+  private final Counter openedRequests;
+
   public MaintenanceRequestService(
       MaintenanceRequestRepository repository,
-      MaintenanceServiceGrpc.MaintenanceServiceBlockingStub maintenanceService) {
+      MaintenanceServiceGrpc.MaintenanceServiceBlockingStub maintenanceService,
+      MeterRegistry meterRegistry) {
     this.repository = repository;
     this.maintenanceService = maintenanceService;
+    this.openedRequests = Counter.builder("maintenance.requests.opened")
+        .description("Pedidos de manutenção abertos")
+        .register(meterRegistry);
   }
 
   @Transactional
@@ -28,7 +37,9 @@ public class MaintenanceRequestService {
         .setDescription(request.description())
         .setPriority(request.priority())
         .build());
-    return repository.save(new MaintenanceRequest(
+    MaintenanceRequest maintenanceRequest = repository.save(new MaintenanceRequest(
         request.propertyId(), request.description(), request.priority(), order.getOrderId()));
+    openedRequests.increment();
+    return maintenanceRequest;
   }
 }

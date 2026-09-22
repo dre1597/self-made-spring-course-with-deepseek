@@ -112,3 +112,14 @@ Authorization: Bearer {{agentToken}}
 ### Consulta o status do relatório
 GET http://localhost:8080/api/reports/monthly/runs/{{executionId}}
 Authorization: Bearer {{agentToken}}
+
+### Saúde
+GET http://localhost:8080/actuator/health
+
+### Métrica de anúncios
+GET http://localhost:8080/actuator/metrics/property.listings.created
+Authorization: Bearer {{agentToken}}
+
+### Métrica de visitas
+GET http://localhost:8080/actuator/metrics/visit.scheduled
+Authorization: Bearer {{agentToken}}
